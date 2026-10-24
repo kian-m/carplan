@@ -1,0 +1,16 @@
+# Runs both containers on any Docker host: add backend/.env, then `docker compose up -d --build`.
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "80:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped
