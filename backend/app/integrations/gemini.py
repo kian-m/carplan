@@ -16,6 +16,12 @@ def configured() -> bool:
     return bool(get_settings().gemini_api_key)
 
 
+def _thinking() -> types.ThinkingConfig | None:
+    # "low" roughly halves latency for short explanations; contract extraction uses the model default.
+    level = get_settings().gemini_thinking_level
+    return types.ThinkingConfig(thinking_level=level) if level else None
+
+
 def _get_client() -> genai.Client:
     global _client
     s = get_settings()
@@ -30,7 +36,7 @@ async def generate(prompt: str, system: str | None = None) -> str:
     resp = await _get_client().aio.models.generate_content(
         model=get_settings().gemini_model,
         contents=prompt,
-        config=types.GenerateContentConfig(system_instruction=system),
+        config=types.GenerateContentConfig(system_instruction=system, thinking_config=_thinking()),
     )
     return resp.text or ""
 
@@ -44,6 +50,20 @@ async def generate_json(prompt: str, schema: dict[str, Any], system: str | None 
             system_instruction=system,
             response_mime_type="application/json",
             response_json_schema=schema,
+            thinking_config=_thinking(),
+        ),
+    )
+    return json.loads(resp.text or "null")
+
+
+async def extract_from_file(data: bytes, mime_type: str, prompt: str, schema: dict[str, Any]) -> Any:
+    """Read a PDF or image and return JSON matching `schema`."""
+    resp = await _get_client().aio.models.generate_content(
+        model=get_settings().gemini_model,
+        contents=[types.Part.from_bytes(data=data, mime_type=mime_type), prompt],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_json_schema=schema,
         ),
     )
     return json.loads(resp.text or "null")
@@ -55,6 +75,6 @@ async def chat(messages: list[dict[str, str]], system: str | None = None) -> str
     resp = await _get_client().aio.models.generate_content(
         model=get_settings().gemini_model,
         contents=contents,
-        config=types.GenerateContentConfig(system_instruction=system),
+        config=types.GenerateContentConfig(system_instruction=system, thinking_config=_thinking()),
     )
     return resp.text or ""

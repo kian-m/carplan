@@ -11,7 +11,7 @@ TARGET="${1:-all}"
 
 # Keys in backend/.env that are stored in Secret Manager. Everything else in .env
 # (model names, base URLs) is passed as a plain env var.
-SECRETS=(NESSIE_API_KEY SERPAPI_API_KEY GEMINI_API_KEY TIGER_DATABASE_URL SNOWFLAKE_PAT)
+SECRETS=(NESSIE_API_KEY SERPAPI_API_KEY GEMINI_API_KEY TIGER_DATABASE_URL SNOWFLAKE_PAT RESEND_API_KEY)
 
 if [[ "$TARGET" == "all" || "$TARGET" == "backend" ]]; then
   SECRET_FLAGS=()

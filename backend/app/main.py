@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import integrations
+from app.routers import carplan, integrations
 
 app = FastAPI(title="HackTX 2026")
 
@@ -31,3 +31,4 @@ async def health():
 
 
 app.include_router(integrations.router)
+app.include_router(carplan.router)

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # Google Gemini — see .env.example for how to get a key
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
+    gemini_thinking_level: str = "low"  # "", "low" or "high"; "" uses the model default
     gemini_vertex: bool = False  # true for Vertex AI express-mode keys (restricted to aiplatform)
 
     # Tiger Data (Timescale Postgres) — connection string from the Tiger Cloud console
@@ -25,6 +26,12 @@ class Settings(BaseSettings):
     snowflake_account_url: str = ""  # e.g. https://abc12345.us-east-1.snowflakecomputing.com
     snowflake_pat: str = ""
     snowflake_model: str = "llama3.1-70b"
+
+    # Resend (recall alert emails) — https://resend.com/api-keys
+    resend_api_key: str = ""
+    # onboarding@resend.dev only delivers to your own Resend account email; verify a domain to email anyone.
+    alerts_from_email: str = "CarPlan <onboarding@resend.dev>"
+    public_app_url: str = "http://localhost:3000"  # used in email links
 
     cors_origins: list[str] = ["http://localhost:3000"]
 

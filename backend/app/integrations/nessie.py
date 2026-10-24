@@ -1,5 +1,6 @@
 """Capital One Nessie mock-banking API. Docs: https://api.nessieisreal.com/documentation"""
 
+from datetime import date
 from typing import Any
 
 import httpx
@@ -61,12 +62,20 @@ async def create_account(customer_id: str, nickname: str, balance: int, type_: s
 async def create_bill(account_id: str, payee: str, amount: float, recurring_day: int, nickname: str = "") -> dict:
     body = {
         "status": "pending",
+        "payment_date": date.today().isoformat(),
         "payee": payee,
         "nickname": nickname or payee,
         "payment_amount": amount,
         "recurring_date": recurring_day,
     }
     return (await _request("POST", f"/accounts/{account_id}/bills", body))["objectCreated"]
+
+
+async def create_deposit(account_id: str, amount: float, date: str, description: str) -> dict:
+    """date: YYYY-MM-DD"""
+    body = {"medium": "balance", "transaction_date": date, "status": "completed", "amount": amount,
+            "description": description}
+    return (await _request("POST", f"/accounts/{account_id}/deposits", body))["objectCreated"]
 
 
 async def financial_snapshot(customer_id: str) -> dict:
@@ -76,4 +85,5 @@ async def financial_snapshot(customer_id: str) -> dict:
     for acct in accounts:
         acct["bills"] = await list_bills(acct["_id"])
         acct["purchases"] = await list_purchases(acct["_id"])
+        acct["deposits"] = await list_deposits(acct["_id"])
     return {"customer": customer, "accounts": accounts}
