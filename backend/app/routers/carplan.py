@@ -17,12 +17,18 @@ router = APIRouter(prefix="/api")
 DEFAULT_FUEL = 1900  # EPA-average annual fuel cost at 15k miles, used if a lookup fails
 
 
+_fuel_cache: dict[tuple, float] = {}
+
+
 async def _fuel(year: int, make: str, model: str) -> float:
-    try:
-        v = await fueleconomy.lookup(year, make, model)
-        return float(v["fuel_cost_annual"]) if v and v.get("fuel_cost_annual") else DEFAULT_FUEL
-    except Exception:
-        return DEFAULT_FUEL
+    key = (year, make.lower(), model.lower())
+    if key not in _fuel_cache:
+        try:
+            v = await fueleconomy.lookup(year, make, model)
+            _fuel_cache[key] = float(v["fuel_cost_annual"]) if v and v.get("fuel_cost_annual") else DEFAULT_FUEL
+        except Exception:
+            return DEFAULT_FUEL  # don't cache failures
+    return _fuel_cache[key]
 
 
 async def _plan(inp: PlanInput) -> dict:

@@ -14,7 +14,7 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
   const res = await fetch(url, {
     method: req.method,
     headers: { "Content-Type": req.headers.get("content-type") ?? "application/json" },
-    body: hasBody ? await req.text() : undefined,
+    body: hasBody ? await req.arrayBuffer() : undefined, // bytes, so file uploads survive
     cache: "no-store",
   });
 

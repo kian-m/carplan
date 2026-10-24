@@ -97,6 +97,8 @@ def _odometer_rows(key: str) -> list[tuple]:
     now = datetime.now(timezone.utc).replace(hour=20, minute=0, second=0, microsecond=0)
     odo, rows = float(d.vehicle.odometer), []
     for i in range(365):
+        if odo < 0:  # newer cars: history starts when the car was new
+            break
         rows.append((now - timedelta(days=i), f"driver:{key}", "odometer", round(odo)))
         odo -= miles[i] * scale
     return rows

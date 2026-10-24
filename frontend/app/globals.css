@@ -1,5 +1,87 @@
 @import "tailwindcss";
 
+/* Toyota Financial Services design tokens (from toyotafinancial.com) */
+@theme {
+  --color-tred: #eb0a1e;
+  --color-tred-dark: #c8081a;
+  --color-tblack: #000000;
+  --color-tgray: #58595b;
+  --color-tgray-light: #767676;
+  --color-tline: #dddddd;
+  --color-tsurface: #f5f5f5;
+  --color-tgreen: #2e7d32;
+  --font-toyota: "Toyota Type", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+html {
+  font-family: var(--font-toyota);
+}
+
 body {
-  @apply bg-zinc-50 text-zinc-900 antialiased;
+  background: #ffffff;
+  color: #000000;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* TFS primary button: red pill */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 60px;
+  background: var(--color-tred);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 24px;
+  transition: background 0.15s;
+}
+.btn-primary:hover {
+  background: var(--color-tred-dark);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 60px;
+  border: 1.5px solid #000;
+  background: #fff;
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12.5px 24px;
+}
+.btn-secondary:hover {
+  background: var(--color-tsurface);
+}
+
+/* TFS card: thin red top rule, 3px radius, soft shadow */
+.tcard {
+  background: #fff;
+  border-radius: 3px;
+  border-top: 2px solid var(--color-tred);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  padding: 20px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-tred);
+  outline-offset: 2px;
+}
+
+input[type="range"] {
+  accent-color: var(--color-tred);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

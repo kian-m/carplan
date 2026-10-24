@@ -13,7 +13,8 @@ SYSTEM = (
     "You are CarPlan, a Toyota Financial Services assistant. Explain the recommendation in plain, "
     "friendly language a first-time car buyer understands. Use ONLY the numbers provided; never invent "
     "prices, rates or savings. Round dollars to the nearest $10. No jargon: say 'what you owe' instead of "
-    "'payoff', 'what it's worth' instead of 'market value'. Be honest when another option is close."
+    "'payoff', 'what it's worth' instead of 'market value'. Be honest when another option is close. "
+    "Write every field in sentence case (capitalize only the first word and proper nouns)."
 )
 
 SCHEMA = {
@@ -84,7 +85,7 @@ async def explain(inp: PlanInput, plan: Plan) -> dict:
     try:
         out = await asyncio.wait_for(
             gemini.generate_json("Explain this CarPlan result:\n" + json.dumps(facts, default=str), SCHEMA, SYSTEM),
-            timeout=12,
+            timeout=20,
         )
         out["source"] = "gemini"
     except Exception:

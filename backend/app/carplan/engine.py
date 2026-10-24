@@ -239,7 +239,7 @@ def build_plan(
                 maintenance=maintenance(age_at_decision, years, is_toyota, False), insurance=ins * H,
                 equity_at_end=value_end - bal_end,
             ),
-            [f"Buyout price ${payoff:,.0f} vs. market value ${value_at_decision:,.0f}",
+            [f"Buyout price ${payoff:,.0f}; worth about ${value_at_decision:,.0f} when your lease ends",
              "No mileage limits or lease-end charges",
              f"Includes ${financed - payoff:,.0f} sales tax and fees"],
             ["payoff_quote"], payoff / max(value_at_decision, 1),
