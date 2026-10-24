@@ -13,7 +13,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 const post = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: "POST", body: data === undefined ? undefined : JSON.stringify(data) });
 
-export type Status = Record<"nessie" | "serpapi" | "gemini" | "tiger" | "snowflake" | "nhtsa", boolean>;
+export type Status = Record<"nessie" | "serpapi" | "gemini" | "tiger" | "snowflake" | "nhtsa" | "fueleconomy", boolean>;
+
+export type FuelVehicle = {
+  id: string;
+  year: number;
+  make: string;
+  model: string;
+  base_model: string | null;
+  vehicle_class: string | null;
+  drive: string | null;
+  transmission: string | null;
+  powertrain: string | null; // "Hybrid" | "Plug-in Hybrid" | "EV" | "Diesel" | null (gas)
+  fuel_type: string | null;
+  mpg_city: number | null;
+  mpg_highway: number | null;
+  mpg_combined: number | null;
+  fuel_cost_annual: number | null; // EPA estimate at 15k miles/yr
+  five_year_savings_vs_average: number | null;
+  co2_grams_per_mile: number | null;
+  ev_range_miles: number | null;
+  other_models?: string[];
+  variants?: { id: string; label: string }[];
+};
 
 export type Vehicle = {
   vin: string;
@@ -69,6 +91,14 @@ export const api = {
       request<any[]>(`/vehicle/recalls?${new URLSearchParams({ make, model, year: String(year) })}`),
     complaints: (make: string, model: string, year: number) =>
       request<any[]>(`/vehicle/complaints?${new URLSearchParams({ make, model, year: String(year) })}`),
+  },
+
+  fuel: {
+    lookup: (year: number, make: string, model: string) =>
+      request<FuelVehicle | null>(`/fuel/lookup?${new URLSearchParams({ year: String(year), make, model })}`),
+    models: (year: number, make: string) =>
+      request<string[]>(`/fuel/models?${new URLSearchParams({ year: String(year), make })}`),
+    vehicle: (id: string) => request<FuelVehicle>(`/fuel/vehicle/${id}`),
   },
 
   snowflake: {

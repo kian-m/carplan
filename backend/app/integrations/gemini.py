@@ -22,7 +22,7 @@ def _get_client() -> genai.Client:
     if not s.gemini_api_key:
         raise NotConfigured("Gemini", "GEMINI_API_KEY")
     if _client is None:
-        _client = genai.Client(api_key=s.gemini_api_key)
+        _client = genai.Client(api_key=s.gemini_api_key, vertexai=s.gemini_vertex)
     return _client
 
 

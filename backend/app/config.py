@@ -6,16 +6,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # Capital One Nessie — http://api.nessieisreal.com
+    # Capital One Nessie — https://api.nessieisreal.com
     nessie_api_key: str = ""
-    nessie_base_url: str = "http://api.nessieisreal.com"
+    nessie_base_url: str = "https://api.nessieisreal.com"
 
     # SerpApi — https://serpapi.com/manage-api-key
     serpapi_api_key: str = ""
 
-    # Google Gemini — https://aistudio.google.com/apikey
+    # Google Gemini — see .env.example for how to get a key
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.8-flash"
+    gemini_vertex: bool = False  # true for Vertex AI express-mode keys (restricted to aiplatform)
 
     # Tiger Data (Timescale Postgres) — connection string from the Tiger Cloud console
     tiger_database_url: str = ""

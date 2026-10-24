@@ -1,4 +1,4 @@
-"""Capital One Nessie mock-banking API. Docs: http://api.nessieisreal.com/documentation"""
+"""Capital One Nessie mock-banking API. Docs: https://api.nessieisreal.com/documentation"""
 
 from typing import Any
 

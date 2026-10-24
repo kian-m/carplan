@@ -6,7 +6,7 @@ import random
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.integrations import gemini, nessie, nhtsa, serpapi, snowflake, tiger
+from app.integrations import fueleconomy, gemini, nessie, nhtsa, serpapi, snowflake, tiger
 
 router = APIRouter(prefix="/api")
 
@@ -20,7 +20,30 @@ async def status() -> dict[str, bool]:
         "tiger": tiger.configured(),
         "snowflake": snowflake.configured(),
         "nhtsa": nhtsa.configured(),
+        "fueleconomy": fueleconomy.configured(),
     }
+
+
+# --- fueleconomy.gov (no key) ---------------------------------------------
+
+@router.get("/fuel/lookup")
+async def fuel_lookup(year: int, make: str, model: str):
+    return await fueleconomy.lookup(year, make, model)
+
+
+@router.get("/fuel/models")
+async def fuel_models(year: int, make: str):
+    return await fueleconomy.models(year, make)
+
+
+@router.get("/fuel/options")
+async def fuel_options(year: int, make: str, model: str):
+    return await fueleconomy.options(year, make, model)
+
+
+@router.get("/fuel/vehicle/{vehicle_id}")
+async def fuel_vehicle(vehicle_id: str):
+    return await fueleconomy.vehicle(vehicle_id)
 
 
 # --- NHTSA (no key) -------------------------------------------------------
