@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Resend (recall alert emails) — https://resend.com/api-keys
     resend_api_key: str = ""
     # onboarding@resend.dev only delivers to your own Resend account email; verify a domain to email anyone.
-    alerts_from_email: str = "CarPlan <onboarding@resend.dev>"
+    alerts_from_email: str = "CarPlan <alerts@carplan.tech>"
     public_app_url: str = "http://localhost:3000"  # used in email links
 
     cors_origins: list[str] = ["http://localhost:3000"]
