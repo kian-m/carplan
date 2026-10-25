@@ -57,7 +57,7 @@ class CostBreakdown(BaseModel):
 
 
 class Option(BaseModel):
-    id: Literal["buy_out", "keep", "new_toyota", "certified_used", "go_flexible"]
+    id: Literal["buy_out", "keep", "new_toyota", "certified_used"]
     title: str
     vehicle_label: str
     monthly_payment: float  # cash leaving your account each month for the car itself

@@ -41,26 +41,26 @@ PRODUCTS: dict[str, dict] = {
     "repeat_customer": {
         "name": "Repeat Customer benefits",
         "category": "Rebates",
-        "description": "Savings for people who have leased or financed with TFS before.",
-        "url": f"{TFS}/financing_options/buy_a_toyota.html",
+        "description": "Offers for people who have leased or financed with TFS before.",
+        "url": f"{TFS}/financing_options/rebate_finance_programs/repeat_customers.html",
     },
     "college_rebate": {
         "name": "College Rebate Program",
         "category": "Rebates",
-        "description": "Money off for college students and recent grads.",
-        "url": f"{TFS}/financing_options/buy_a_toyota.html",
+        "description": "A rebate on a new Toyota for recent grads and some students. Not for Certified Used.",
+        "url": f"{TFS}/financing_options/rebate_finance_programs/college_rebate_program.html",
     },
     "military_rebate": {
         "name": "Military Rebate",
         "category": "Rebates",
-        "description": "Money off for people who serve or have served.",
-        "url": f"{TFS}/financing_options/buy_a_toyota.html",
+        "description": "A rebate for eligible military members. Ask a dealer if you qualify.",
+        "url": f"{TFS}/financing_options/rebate_finance_programs/military_rebate_program.html",
     },
     # Voluntary protection (optional, cancellable, not required to obtain credit)
     "gap": {
         "name": "Guaranteed Auto Protection (GAP)",
         "category": "Protection",
-        "description": "If your car is totaled and you owe more than it's worth, GAP can pay the difference.",
+        "description": "If your car is totaled and you owe more than it's worth, GAP may pay the difference.",
         "url": f"{TFS}/vehicle_protection_plan/guaranteed_auto_protection.html",
     },
     "vsa": {
@@ -72,13 +72,13 @@ PRODUCTS: dict[str, dict] = {
     "toyotacare_plus": {
         "name": "ToyotaCare Plus",
         "category": "Protection",
-        "description": "Pay now for future service, big repairs and 24-hour roadside help.",
+        "description": "Pay now for scheduled service, major services and 24-hour roadside help.",
         "url": f"{TFS}/vehicle_protection_plan/prepaid_maintenance_plan.html",
     },
-    "auto_care": {
-        "name": "Toyota Auto Care",
+    "service_care": {
+        "name": "Toyota Service Care",
         "category": "Protection",
-        "description": "Pay now for regular service and roadside help, at today's prices.",
+        "description": "Locks in today's prices for your future scheduled service, with roadside help.",
         "url": f"{TFS}/vehicle_protection_plan/prepaid_maintenance_plan.html",
     },
     "tire_wheel": {
@@ -90,7 +90,7 @@ PRODUCTS: dict[str, dict] = {
     "excess_wear": {
         "name": "Excess Wear & Use Protection",
         "category": "Protection",
-        "description": "Helps you avoid wear and mileage charges when your lease ends. No claims, no deductible.",
+        "description": "Covers charges for excess wear and use when your lease ends. No claims, no deductible.",
         "url": f"{TFS}/vehicle_protection_plan/excess_wear_use_protection.html",
     },
     "insurance": {
@@ -114,7 +114,7 @@ CTA = {
     "gap": "Explore GAP coverage",
     "vsa": "See service agreements",
     "toyotacare_plus": "See ToyotaCare Plus",
-    "auto_care": "See Toyota Auto Care",
+    "service_care": "See Toyota Service Care",
     "tire_wheel": "See Tire & Wheel Protection",
     "excess_wear": "See Excess Wear & Use",
     "insurance": "Get an insurance quote",

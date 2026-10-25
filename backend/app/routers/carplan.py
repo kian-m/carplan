@@ -67,13 +67,6 @@ async def get_driver(key: str):
     return (await drivers.load(key)).model_dump()
 
 
-@router.get("/drivers/{key}/mileage")
-async def driver_mileage(key: str):
-    if key not in drivers.DRIVERS:
-        raise HTTPException(404, f"Unknown driver: {key}")
-    return await drivers.mileage_history(key)
-
-
 # --- plans ----------------------------------------------------------------
 
 @router.post("/plan")

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Alert, Bell, Car, Check, Dollar, Gauge, Shield, Tag, Umbrella, Wrench } from "@/app/icons";
 import {
   carplan,
@@ -310,7 +309,7 @@ function Adjusters({
             </span>
           </p>
         ) : (
-          <p className="mt-2 text-xs text-tgray">Based on your recent driving. Change it to see if your best move changes.</p>
+          <p className="mt-2 text-xs text-tgray">Based on what you told us. Change it to see if your best move changes.</p>
         )}
       </div>
 
@@ -393,8 +392,21 @@ function Assumptions({ data }: { data: PlanResponse }) {
       </li>
       <li>
         Value loss: about {pct(a.depreciation_per_year.toyota)} a year for a Toyota, more for most other brands, and more if you
-        drive over 12,000 miles a year.
+        drive over 12,000 miles a year. These are our estimates.
       </li>
+      <li>
+        New Toyota prices: approximate starting prices. Certified Used: about {pct(a.certified_used_price_pct_of_msrp)} of the new
+        price, for a {a.certified_used_age_years}-year-old car. These are our estimates.
+      </li>
+      <li>
+        New lease: {a.new_lease_term_months} months, {a.new_lease_miles_per_year.toLocaleString()} miles a year, worth{" "}
+        {pct(a.new_lease_residual_pct)} of its price at the end. These are example terms, not an offer.
+      </li>
+      <li>
+        Lease end: a {usd(a.purchase_option_fee)} buyout fee (our estimate; check your contract) and a {usd(a.disposition_fee)} return
+        fee, which TFS waives when you get a new or certified Toyota through TFS.
+      </li>
+      <li>Fits your budget: the payment plus insurance is at most {pct(a.max_car_budget_pct_of_income)} of your monthly income.</li>
       <li>Our math follows fixed rules. AI only writes the words you read.</li>
     </ul>
   );
@@ -513,7 +525,7 @@ function OptionCard({ o, best, years, max }: { o: Option; best: boolean; years: 
 // --- TFS products ----------------------------------------------------------
 
 function productIcon(r: TfsRecommendation) {
-  if (["vsa", "auto_care", "toyotacare_plus"].includes(r.product)) return Wrench;
+  if (["vsa", "service_care", "toyotacare_plus"].includes(r.product)) return Wrench;
   if (r.category === "Protection") return Shield;
   if (r.category === "Rebates") return Tag;
   if (r.category === "Insurance") return Umbrella;
@@ -665,63 +677,6 @@ function RecallAlerts({ input }: { input: PlanInput }) {
           </form>
         )}
         {state === "error" && <p className="mt-2 text-sm text-[#ff8a95]">{msg}</p>}
-      </div>
-    </section>
-  );
-}
-
-// --- mileage -----------------------------------------------------------------
-
-function Mileage({ driver, input }: { driver: string; input: PlanInput }) {
-  const [rows, setRows] = useState<{ week: string; odometer: number }[]>([]);
-  useEffect(() => {
-    carplan.mileage(driver).then(setRows).catch(() => setRows([]));
-  }, [driver]);
-  if (rows.length < 2) return null;
-  const months = rows.filter((r, i) => i === 0 || new Date(r.week).getMonth() !== new Date(rows[i - 1].week).getMonth());
-  const lo = Math.min(...rows.map((r) => r.odometer));
-  const hi = Math.max(...rows.map((r) => r.odometer));
-  const step = [1000, 2000, 5000, 10000].find((n) => (hi - lo) / n <= 5) ?? 20000;
-  const yTicks: number[] = [];
-  for (let n = Math.floor(lo / step) * step; n < hi + step; n += step) yTicks.push(n);
-  return (
-    <section className="mt-14 rounded-[3px] border border-tline p-5 sm:p-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-2xl font-bold tracking-tight">Your driving this year</h2>
-        <p className="text-tgray">
-          <span className="font-semibold text-black">{input.miles_per_year.toLocaleString()}</span> miles a year, from your odometer
-        </p>
-      </div>
-      <div className="mt-4 h-56">
-        <ResponsiveContainer>
-          <AreaChart data={rows} margin={{ left: 8, right: 8 }}>
-            <defs>
-              <linearGradient id="odo" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#eb0a1e" stopOpacity={0.18} />
-                <stop offset="100%" stopColor="#eb0a1e" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="week"
-              ticks={months.map((r) => r.week)}
-              tickFormatter={(t) => new Date(t).toLocaleDateString("en-US", { month: "short" })}
-              fontSize={12}
-              minTickGap={8}
-            />
-            <YAxis
-              fontSize={12}
-              domain={[yTicks[0], yTicks[yTicks.length - 1]]}
-              ticks={yTicks}
-              tickFormatter={(n) => `${n / 1000}k`}
-              width={40}
-            />
-            <Tooltip
-              labelFormatter={(t) => new Date(t).toLocaleDateString()}
-              formatter={(n: number) => [`${Math.round(n).toLocaleString()} mi`, "Odometer"]}
-            />
-            <Area type="monotone" dataKey="odometer" stroke="#eb0a1e" strokeWidth={2.5} fill="url(#odo)" isAnimationActive={false} />
-          </AreaChart>
-        </ResponsiveContainer>
       </div>
     </section>
   );
@@ -916,7 +871,6 @@ function PlanPage() {
 
       <Products recs={others} disclosure={data.plan.disclosure} />
       <Catalog plan={data.plan} />
-      {driver && <Mileage driver={driver} input={data.input} />}
       <RecallAlerts input={input} />
 
       <details className="mt-12 text-sm">

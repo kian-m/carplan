@@ -31,16 +31,13 @@ ASSUMPTIONS = {
                               "hyundai": 0.13, "kia": 0.13, "ford": 0.14, "chevrolet": 0.14, "nissan": 0.14,
                               "default": 0.13},
     "sales_tax_rate": 0.0625,  # Texas motor vehicle sales tax, applied whenever you buy or lease a car
-    "dealer_fees": 225,
+    "dealer_fees": 225,  # Texas documentary fee presumed reasonable by the OCCC
     "new_car_first_year_depreciation": 0.15,
     "maintenance_per_year": {"0-2": 450, "3-5": 750, "6+": 1100},
     "non_toyota_maintenance_multiplier": 1.2,
     "toyotacare": "2 years / 25,000 miles of no-cost scheduled maintenance on new Toyotas",
-    "flexible_monthly": 549,
-    "flexible_per_mile": 0.20,
-    "flexible_includes": "insurance and maintenance",
-    "purchase_option_fee": 300,
-    "disposition_fee": 350,
+    "purchase_option_fee": 300,  # estimate: not published by TFS, varies by contract
+    "disposition_fee": 350,  # TFS: up to $350, waived when you replace with a new or certified Toyota through TFS
     "disposition_fee_waived_if_staying_with_toyota": True,
     "max_car_budget_pct_of_income": 0.20,
     "basic_warranty": {"months": 36, "miles": 36000},
@@ -213,7 +210,7 @@ def build_plan(
 
     def option(id_, title, label, monthly, b: CostBreakdown, notes, products, ltv=None):
         total = b.payments + b.fuel + b.maintenance + b.insurance + b.fees - b.equity_credit - b.equity_at_end
-        car_monthly = monthly + (0 if id_ == "go_flexible" else ins)
+        car_monthly = monthly + ins
         affordable = car_monthly <= budget and car_monthly <= disposable * 0.6
         return Option(
             id=id_, title=title, vehicle_label=label, monthly_payment=round(monthly, 2),
@@ -313,19 +310,6 @@ def build_plan(
         ["certified_used"], principal / cpo_price,
     ))
 
-    # 4. Go flexible: a Toyota subscription concept (Toyota's mobility direction)
-    fees_flex, credit_flex, _ = exit_terms(True)
-    pm = A["flexible_monthly"] + A["flexible_per_mile"] * mpy / 12
-    options.append(option(
-        "go_flexible", "Go flexible", f"Toyota subscription · {target}", pm,
-        CostBreakdown(
-            payments=pm * H, fuel=fuel(fuel_target, mpy, H), fees=fees_flex,
-            equity_credit=credit_flex,
-        ),
-        ["A future idea: one monthly price with insurance and upkeep included. Swap or pause anytime."],
-        [],
-    ))
-
     # --- pick the cheapest affordable option -------------------------------
     pool = [o for o in options if o.affordable] or options
     best = min(pool, key=lambda o: o.total_cost)
@@ -340,7 +324,7 @@ def build_plan(
     # GAP: underwater today, or the recommended loan starts underwater
     if c.kind in ("loan", "lease") and equity < 0 and best.id in ("keep", "buy_out"):
         rec("gap", f"You owe about ${-equity:,.0f} more than your {v.model} is worth. If it's stolen or totaled, insurance "
-                   f"only pays what it's worth. GAP can cover the ${-equity:,.0f} difference.", "high")
+                   f"only pays what it's worth. GAP may cover the ${-equity:,.0f} difference.", "high")
     elif best.loan_to_value and best.loan_to_value > 1.0:
         rec("gap", "Your new loan would start out bigger than the car's value. If the car is totaled early on, "
                    "GAP covers the difference.", "high")
@@ -350,17 +334,16 @@ def build_plan(
         rec("vsa", f"Your factory warranty {when}. A Vehicle Service Agreement helps pay for repairs after that.", "medium")
     # Prepaid maintenance
     if best.id in ("buy_out", "keep") and is_toyota and (age_now >= 2 or v.odometer >= 25000):
-        rec("auto_care", "Your free ToyotaCare service is over. Toyota Auto Care lets you pay for future service now, at today's prices.", "medium")
+        rec("service_care", "Your free ToyotaCare service is over. Toyota Service Care locks in today's prices for your future service.", "medium")
     elif best.id == "new_toyota":
         rec("toyotacare_plus", "Add more years of service to your free ToyotaCare plan.", "low")
     # Tire & Wheel for heavy drivers
     if mpy >= 15000:
         rec("tire_wheel", f"You drive {mpy:,} miles a year. More miles means more chances for potholes and nails to damage your tires.", "medium")
-    # Excess Wear & Use for new leases
-    if best.id == "new_toyota" and c.kind == "lease" and inp.path == "toyota" and (excess_miles > 0 or mpy > 12000):
-        rec("excess_wear", ("You're on track to go over your miles on this lease." if excess_miles > 0 else
-                            "You drive more than most leases allow.") +
-            " Excess Wear & Use protection helps you avoid charges when your next lease ends.", "medium")
+    # Excess Wear & Use for new leases. It covers wear and use (dents, scratches), not extra miles.
+    if best.id == "new_toyota" and c.kind == "lease" and inp.path == "toyota":
+        rec("excess_wear", "Leasing a new car? Excess Wear & Use protection covers charges for wear like dents and "
+                           "scratches when you return it.", "low")
     # Rebates and loyalty
     if best.id in ("new_toyota", "certified_used"):
         if c.lender == "TFS":
@@ -368,10 +351,11 @@ def build_plan(
         else:
             rec("prequalify", "Find out what you could qualify for with Toyota Financial Services. It takes a few steps.", "medium")
         rec("insurance", "Get a Toyota Insurance quote for your new car.", "low")
-    if "college" in inp.flags:
-        rec("college_rebate", "Recent grads can get money off with the TFS College Rebate.", "medium")
-    if "military" in inp.flags:
-        rec("military_rebate", "Military members can get money off with the TFS Military Rebate.", "medium")
+    # Rebates apply to new Toyotas financed or leased through TFS (not Certified Used), one per purchase.
+    if best.id == "new_toyota" and "college" in inp.flags:
+        rec("college_rebate", "Recent grads may get a rebate on a new Toyota through TFS. Ask a dealer if you qualify.", "medium")
+    elif best.id == "new_toyota" and "military" in inp.flags:
+        rec("military_rebate", "Military members may get a rebate on a new Toyota through TFS. Ask a dealer if you qualify.", "medium")
 
     order = {"high": 0, "medium": 1, "low": 2}
     recs.sort(key=lambda r: order[r.priority])

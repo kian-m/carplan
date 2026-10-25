@@ -1,13 +1,11 @@
-"""Sample drivers for the demo. Each is seeded into Nessie (bank) and Tiger Data (odometer
-history), and their plan input is read back from those systems, with the static values
-below as a fallback so the demo never breaks.
+"""Sample drivers for the demo. Each is seeded into Nessie (bank), and their income and bills
+are read back from it, with the static values below as a fallback so the demo never breaks.
 """
 
-import random
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 
 from app.carplan.models import Contract, Finances, PlanInput, Vehicle
-from app.integrations import nessie, tiger
+from app.integrations import nessie
 
 ADDRESS = {"street_number": "2100", "street_name": "Speedway", "city": "Austin", "state": "TX", "zip": "78712"}
 
@@ -61,13 +59,13 @@ DRIVERS: dict[str, dict] = {
         "bills": [("The Domain Apartments", 1600), ("Austin Energy", 140), ("AT&T", 75),
                   ("Life Time Fitness", 45), ("Mohela Student Loan", 310), ("American Honda Finance", 429)],
     },
-    # Shows the widest set of TFS services: an underwater lease buyout for a high-mileage driver
-    # who just graduated from ROTC (GAP, service agreement, prepaid upkeep, tires, two rebates).
+    # A TFS customer with a lease ending and lots of miles: a newer Certified Used car, plus repeat
+    # customer offers, Tire & Wheel and insurance. The plan page also lists every TFS service.
     "taylor": {
         "first": "Taylor", "last": "Nguyen",
-        "tagline": "Lease ending, ROTC grad, drives 20k a year",
+        "tagline": "Lease ending, drives 20k miles a year",
         "input": PlanInput(
-            path="toyota", name="Taylor", flags=["college", "military"],
+            path="toyota", name="Taylor",
             vehicle=Vehicle(vin="4T1G11AK5PU123456", year=2023, make="Toyota", model="Camry", trim="SE",
                             odometer=44000, msrp=29500),
             contract=Contract(kind="lease", monthly_payment=399, term_months=36, months_elapsed=34,
@@ -105,25 +103,8 @@ async def _find_customer(key: str) -> str | None:
     return None
 
 
-def _odometer_rows(key: str) -> list[tuple]:
-    """A year of daily odometer readings ending at today's odometer."""
-    d = DRIVERS[key]["input"]
-    rng = random.Random(key)
-    daily = d.miles_per_year / 365
-    miles = [max(0.0, rng.gauss(daily * (1.15 if (i % 7) < 5 else 0.6), daily * 0.35)) for i in range(365)]
-    scale = d.miles_per_year / sum(miles)
-    now = datetime.now(timezone.utc).replace(hour=20, minute=0, second=0, microsecond=0)
-    odo, rows = float(d.vehicle.odometer), []
-    for i in range(365):
-        if odo < 0:  # newer cars: history starts when the car was new
-            break
-        rows.append((now - timedelta(days=i), f"driver:{key}", "odometer", round(odo)))
-        odo -= miles[i] * scale
-    return rows
-
-
 async def seed() -> dict:
-    """Idempotent: creates missing Nessie customers and rewrites odometer history."""
+    """Idempotent: creates any missing Nessie customers, accounts, bills and paychecks."""
     report: dict = {}
     for key, d in DRIVERS.items():
         r: dict = {}
@@ -144,9 +125,6 @@ async def seed() -> dict:
                     await nessie.create_deposit(acct["_id"], d["income"] / 2,
                                                 (today - timedelta(days=days_ago)).isoformat(), "Payroll")
             r["nessie"] = cid
-        if tiger.configured():
-            await tiger.query("DELETE FROM events WHERE entity_id = %s AND metric = 'odometer'", (f"driver:{key}",))
-            r["tiger_rows"] = await tiger.insert_events(_odometer_rows(key))
         report[key] = r
     return report
 
@@ -168,17 +146,6 @@ async def _finances_from_nessie(key: str) -> Finances | None:
     return Finances(monthly_income=income, monthly_bills=bills, checking_balance=balance, source="nessie")
 
 
-async def _miles_per_year_from_tiger(key: str) -> int | None:
-    rows = await tiger.query(
-        """SELECT max(value) - min(value) AS miles, extract(epoch FROM max(time) - min(time)) / 86400 AS days
-           FROM events WHERE entity_id = %s AND metric = 'odometer' AND time > now() - interval '180 days'""",
-        (f"driver:{key}",),
-    )
-    if not rows or not rows[0]["days"]:
-        return None
-    return int(round(rows[0]["miles"] / float(rows[0]["days"]) * 365, -2))
-
-
 async def load(key: str) -> PlanInput:
     inp = DRIVERS[key]["input"].model_copy(deep=True)
     if nessie.configured():
@@ -187,19 +154,4 @@ async def load(key: str) -> PlanInput:
                 inp.finances = fin
         except Exception:
             pass
-    if tiger.configured():
-        try:
-            if mpy := await _miles_per_year_from_tiger(key):
-                inp.miles_per_year = mpy
-        except Exception:
-            pass
     return inp
-
-
-async def mileage_history(key: str) -> list[dict]:
-    return await tiger.query(
-        """SELECT time_bucket('1 week', time) AS week, max(value) AS odometer
-           FROM events WHERE entity_id = %s AND metric = 'odometer'
-           GROUP BY week ORDER BY week""",
-        (f"driver:{key}",),
-    )

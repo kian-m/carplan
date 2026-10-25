@@ -38,9 +38,9 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
 # --- sample drivers: each gets its own, honest answer ----------------------
 
 @pytest.mark.parametrize("driver, best, count", [
-    ("maria", "Buy out your lease", 4),
-    ("sam", "Keep your car", 3),  # no Certified Used: it would be the same 2024 Corolla Hybrid he has
-    ("jordan", "Certified Used RAV4 Hybrid", 4),
+    ("maria", "Buy out your lease", 3),
+    ("sam", "Keep your car", 2),  # no Certified Used: it would be the same 2024 Corolla Hybrid he has
+    ("jordan", "Certified Used RAV4 Hybrid", 3),
 ])
 def test_each_sample_driver_gets_the_right_recommendation(page: Page, base_url, driver, best, count):
     open_plan(page, base_url, driver)
@@ -103,15 +103,16 @@ def test_mileage_slider_changes_lease_overage(page: Page, base_url):
     expect(note).not_to_have_text(before)
 
 
-def test_taylor_shows_every_tfs_service_with_picks_marked(page: Page, base_url):
+def test_every_tfs_service_is_listed_with_picks_marked(page: Page, base_url):
     open_plan(page, base_url, "taylor")
     catalog = page.locator("section[aria-labelledby=catalog]")
     expect(catalog.get_by_role("link")).to_have_count(15)
     marked = catalog.get_by_role("link").filter(has_text="For you")
     expect(marked.first).to_be_visible()
-    assert marked.count() >= 5
-    for rebate in ("College Rebate Program", "Military Rebate"):
-        expect(catalog.get_by_role("link", name=re.compile(rebate)).filter(has_text="For you")).to_be_visible()
+    assert marked.count() >= 4
+    expect(catalog.get_by_role("link", name=re.compile("Toyota Certified Used")).filter(has_text="For you")).to_be_visible()
+    # rebates only apply to new Toyotas, so they must not be marked next to a Certified Used pick
+    expect(catalog.get_by_role("link", name=re.compile("College Rebate")).filter(has_text="For you")).to_have_count(0)
 
 
 def test_other_brand_sees_its_car_next_to_the_toyota(page: Page, base_url):

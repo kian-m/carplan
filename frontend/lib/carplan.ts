@@ -32,7 +32,7 @@ export type PlanInput = {
   flags?: ("college" | "military")[];
 };
 
-export type OptionId = "buy_out" | "keep" | "new_toyota" | "certified_used" | "go_flexible";
+export type OptionId = "buy_out" | "keep" | "new_toyota" | "certified_used";
 
 export type Option = {
   id: OptionId;
@@ -140,7 +140,6 @@ const json = (data: unknown): RequestInit => ({
 export const carplan = {
   drivers: () => call<DriverSummary[]>("/drivers"),
   driver: (id: string) => call<PlanInput>(`/drivers/${id}`),
-  mileage: (id: string) => call<{ week: string; odometer: number }[]>(`/drivers/${id}/mileage`),
   plan: (input: PlanInput) => call<PlanResponse>("/plan", json(input)),
   products: () => call<Record<string, TfsProduct>>("/tfs/products"),
   explain: (input: PlanInput) => call<Explanation>("/plan/explain", json(input)),
