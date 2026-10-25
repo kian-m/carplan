@@ -139,6 +139,35 @@ CONTRACT_PROMPT = (
 )
 
 
+# Plausible ranges for each extracted number; anything outside is treated as a misread.
+SANE = {
+    "year": (1990, date.today().year + 1),
+    "monthly_payment": (25, 10000),
+    "term_months": (6, 96),
+    "residual_value": (1000, 300000),
+    "miles_allowed_per_year": (5000, 50000),
+    "excess_mile_fee": (0.01, 1),
+    "apr": (0, 40),
+    "amount_financed": (1000, 300000),
+    "msrp": (5000, 500000),
+}
+
+
+def _sane(out: dict | None) -> dict:
+    """Drop fields that can't be right (a 5-digit year, a 15-character VIN) so they get re-read."""
+    out = dict(out or {})
+    for field, (lo, hi) in SANE.items():
+        v = out.get(field)
+        if v is not None and not (isinstance(v, (int, float)) and lo <= v <= hi):
+            out.pop(field)
+    vin = str(out.get("vin") or "").strip().upper()
+    if vin and (len(vin) != 17 or not vin.isalnum() or set(vin) & set("IOQ")):
+        out.pop("vin")
+    elif vin:
+        out["vin"] = vin
+    return out
+
+
 @router.post("/contract/parse")
 async def parse_contract(file: UploadFile):
     data = await file.read()
@@ -147,12 +176,22 @@ async def parse_contract(file: UploadFile):
     mime = file.content_type or "application/pdf"
     if not (mime == "application/pdf" or mime.startswith("image/")):
         raise HTTPException(415, "Upload a PDF or a photo of your contract")
-    out = await gemini.extract_from_file(data, mime, CONTRACT_PROMPT, CONTRACT_SCHEMA)
-    # Gemini occasionally returns a partial read; one retry nearly always gets the full contract.
-    if not out or not out.get("monthly_payment") or not out.get("term_months"):
-        retry = await gemini.extract_from_file(data, mime, CONTRACT_PROMPT, CONTRACT_SCHEMA)
-        if retry and len(retry) > len(out or {}):
-            out = retry
+
+    def read():
+        return gemini.hedged(lambda: gemini.extract_from_file(data, mime, CONTRACT_PROMPT, CONTRACT_SCHEMA),
+                             hedges=(12, 24), timeout=50)
+
+    try:
+        out = _sane(await read())
+    except TimeoutError:
+        raise HTTPException(504, "Reading your contract took too long. Try again, or enter the details below.")
+    # A read that's missing the core terms or had impossible values gets one more try;
+    # the second read fills in whatever the first one lacked.
+    if not out.get("monthly_payment") or not out.get("term_months"):
+        try:
+            out = {**_sane(await read()), **out}
+        except TimeoutError:
+            pass
     if out and out.get("vin") and not out.get("model"):
         try:
             decoded = await nhtsa.decode_vin(out["vin"])

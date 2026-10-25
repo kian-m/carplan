@@ -1,0 +1,581 @@
+{
+  "summary": {
+    "when": "2026-10-25T03:22:13+00:00",
+    "base_url": "http://localhost:8010",
+    "reads": 24,
+    "field_accuracy": 0.6905,
+    "perfect_reads": 0.5,
+    "privacy_leaks": 0,
+    "latency_p50_s": 5.61,
+    "latency_p95_s": 11.65,
+    "errors": 7,
+    "by_field": {
+      "kind": 0.7083,
+      "vin": 0.5833,
+      "year": 0.7083,
+      "make": 0.7083,
+      "model": 0.7083,
+      "monthly_payment": 0.7083,
+      "term_months": 0.7083,
+      "first_payment_date": 0.7083,
+      "residual_value": 0.75,
+      "miles_allowed_per_year": 0.75,
+      "excess_mile_fee": 0.5833,
+      "apr": 0.6667,
+      "amount_financed": 0.6667
+    },
+    "by_contract": {
+      "sample-lease-rav4-hybrid.pdf (pdf)": 1.0,
+      "sample-lease-rav4-hybrid.pdf (photo)": 0.9394,
+      "sample-loan-camry.pdf (pdf)": 1.0,
+      "sample-loan-camry.pdf (photo)": 0.9,
+      "sample-lease-honda-civic.pdf (pdf)": 1.0,
+      "sample-lease-honda-civic.pdf (photo)": 0.0,
+      "sample-loan-nissan-altima.pdf (pdf)": 0.6667,
+      "sample-loan-nissan-altima.pdf (photo)": 0.0
+    }
+  },
+  "leaks": [],
+  "reads": [
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 7.72,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.79,
+      "terms_explained": 5,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 8.26,
+      "terms_explained": 5,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 0.9090909090909091,
+      "seconds": 4.93,
+      "terms_explained": 4,
+      "wrong": {
+        "excess_mile_fee": {
+          "expected": 0.15,
+          "got": null
+        }
+      },
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.18,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 0.9090909090909091,
+      "seconds": 11.65,
+      "terms_explained": 0,
+      "wrong": {
+        "excess_mile_fee": {
+          "expected": 0.15,
+          "got": null
+        }
+      },
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 6.99,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 4.57,
+      "terms_explained": 0,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 6.56,
+      "terms_explained": 5,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 0.9,
+      "seconds": 5.76,
+      "terms_explained": 3,
+      "wrong": {
+        "vin": {
+          "expected": "4T1G11AK8RU417806",
+          "got": null
+        }
+      },
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 0.9,
+      "seconds": 5.76,
+      "terms_explained": 4,
+      "wrong": {
+        "vin": {
+          "expected": "4T1G11AK8RU417806",
+          "got": "4T1G11AKBRU417806"
+        }
+      },
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 0.9,
+      "seconds": 5.46,
+      "terms_explained": 5,
+      "wrong": {
+        "vin": {
+          "expected": "4T1G11AK8RU417806",
+          "got": "4T1G11AK8RU417805"
+        }
+      },
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 8.97,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.95,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 4.95,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 0.0,
+      "seconds": 0.24,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "lease",
+          "got": null
+        },
+        "vin": {
+          "expected": "2HGFE2F5XRH512384",
+          "got": null
+        },
+        "year": {
+          "expected": 2024,
+          "got": null
+        },
+        "make": {
+          "expected": "Honda",
+          "got": null
+        },
+        "model": {
+          "expected": "Civic",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 362.92,
+          "got": null
+        },
+        "term_months": {
+          "expected": 36,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2024-07-15",
+          "got": null
+        },
+        "residual_value": {
+          "expected": 15950,
+          "got": null
+        },
+        "miles_allowed_per_year": {
+          "expected": 12000,
+          "got": null
+        },
+        "excess_mile_fee": {
+          "expected": 0.15,
+          "got": null
+        }
+      },
+      "error": "HTTPStatusError: Server error '500 Internal Server Error' for url 'http://localhost:8010/api/contract/parse'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500"
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 0.0,
+      "seconds": 0.02,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "lease",
+          "got": null
+        },
+        "vin": {
+          "expected": "2HGFE2F5XRH512384",
+          "got": null
+        },
+        "year": {
+          "expected": 2024,
+          "got": null
+        },
+        "make": {
+          "expected": "Honda",
+          "got": null
+        },
+        "model": {
+          "expected": "Civic",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 362.92,
+          "got": null
+        },
+        "term_months": {
+          "expected": 36,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2024-07-15",
+          "got": null
+        },
+        "residual_value": {
+          "expected": 15950,
+          "got": null
+        },
+        "miles_allowed_per_year": {
+          "expected": 12000,
+          "got": null
+        },
+        "excess_mile_fee": {
+          "expected": 0.15,
+          "got": null
+        }
+      },
+      "error": "ReadError: "
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 0.0,
+      "seconds": 0.35,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "lease",
+          "got": null
+        },
+        "vin": {
+          "expected": "2HGFE2F5XRH512384",
+          "got": null
+        },
+        "year": {
+          "expected": 2024,
+          "got": null
+        },
+        "make": {
+          "expected": "Honda",
+          "got": null
+        },
+        "model": {
+          "expected": "Civic",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 362.92,
+          "got": null
+        },
+        "term_months": {
+          "expected": 36,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2024-07-15",
+          "got": null
+        },
+        "residual_value": {
+          "expected": 15950,
+          "got": null
+        },
+        "miles_allowed_per_year": {
+          "expected": 12000,
+          "got": null
+        },
+        "excess_mile_fee": {
+          "expected": 0.15,
+          "got": null
+        }
+      },
+      "error": "HTTPStatusError: Server error '500 Internal Server Error' for url 'http://localhost:8010/api/contract/parse'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500"
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 0.0,
+      "seconds": 0.0,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "loan",
+          "got": null
+        },
+        "vin": {
+          "expected": "1N4BL4DV9PN337251",
+          "got": null
+        },
+        "year": {
+          "expected": 2023,
+          "got": null
+        },
+        "make": {
+          "expected": "Nissan",
+          "got": null
+        },
+        "model": {
+          "expected": "Altima",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 502.49,
+          "got": null
+        },
+        "term_months": {
+          "expected": 60,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2023-04-18",
+          "got": null
+        },
+        "apr": {
+          "expected": 6.49,
+          "got": null
+        },
+        "amount_financed": {
+          "expected": 25687.81,
+          "got": null
+        }
+      },
+      "error": "ReadError: "
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 7.4,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 13.33,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 0.0,
+      "seconds": 0.3,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "loan",
+          "got": null
+        },
+        "vin": {
+          "expected": "1N4BL4DV9PN337251",
+          "got": null
+        },
+        "year": {
+          "expected": 2023,
+          "got": null
+        },
+        "make": {
+          "expected": "Nissan",
+          "got": null
+        },
+        "model": {
+          "expected": "Altima",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 502.49,
+          "got": null
+        },
+        "term_months": {
+          "expected": 60,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2023-04-18",
+          "got": null
+        },
+        "apr": {
+          "expected": 6.49,
+          "got": null
+        },
+        "amount_financed": {
+          "expected": 25687.81,
+          "got": null
+        }
+      },
+      "error": "HTTPStatusError: Server error '500 Internal Server Error' for url 'http://localhost:8010/api/contract/parse'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500"
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 0.0,
+      "seconds": 0.01,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "loan",
+          "got": null
+        },
+        "vin": {
+          "expected": "1N4BL4DV9PN337251",
+          "got": null
+        },
+        "year": {
+          "expected": 2023,
+          "got": null
+        },
+        "make": {
+          "expected": "Nissan",
+          "got": null
+        },
+        "model": {
+          "expected": "Altima",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 502.49,
+          "got": null
+        },
+        "term_months": {
+          "expected": 60,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2023-04-18",
+          "got": null
+        },
+        "apr": {
+          "expected": 6.49,
+          "got": null
+        },
+        "amount_financed": {
+          "expected": 25687.81,
+          "got": null
+        }
+      },
+      "error": "ReadError: "
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 0.0,
+      "seconds": 0.25,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "loan",
+          "got": null
+        },
+        "vin": {
+          "expected": "1N4BL4DV9PN337251",
+          "got": null
+        },
+        "year": {
+          "expected": 2023,
+          "got": null
+        },
+        "make": {
+          "expected": "Nissan",
+          "got": null
+        },
+        "model": {
+          "expected": "Altima",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 502.49,
+          "got": null
+        },
+        "term_months": {
+          "expected": 60,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2023-04-18",
+          "got": null
+        },
+        "apr": {
+          "expected": 6.49,
+          "got": null
+        },
+        "amount_financed": {
+          "expected": 25687.81,
+          "got": null
+        }
+      },
+      "error": "HTTPStatusError: Server error '500 Internal Server Error' for url 'http://localhost:8010/api/contract/parse'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500"
+    }
+  ]
+}

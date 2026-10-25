@@ -2,7 +2,6 @@
 use is passed in. If Gemini is slow or unavailable, a template answer is returned instead.
 """
 
-import asyncio
 import hashlib
 import json
 
@@ -75,36 +74,6 @@ def template(inp: PlanInput, plan: Plan) -> dict:
     }
 
 
-async def _hedged(call, hedges: tuple[float, ...] = (3, 7), timeout: float = 12):
-    """Most Gemini calls finish in 2-4s but some stall for 15-25s. Start an identical backup call
-    at each `hedges` mark while none has answered, and return the first success."""
-    loop = asyncio.get_running_loop()
-    deadline = loop.time() + timeout
-    marks = [loop.time() + h for h in hedges]
-    tasks = [asyncio.create_task(call())]
-    error: BaseException | None = None
-    try:
-        while True:
-            wake = min([*marks, deadline])
-            pending = [t for t in tasks if not t.done()]
-            if pending:
-                done, _ = await asyncio.wait(pending, timeout=max(0, wake - loop.time()), return_when=asyncio.FIRST_COMPLETED)
-                for t in done:
-                    if t.exception() is None:
-                        return t.result()
-                    error = t.exception()
-            elif not marks:
-                raise error or TimeoutError("Gemini did not answer in time")
-            if loop.time() >= deadline:
-                raise TimeoutError("Gemini did not answer in time")
-            if marks and (loop.time() >= marks[0] or not pending):
-                marks.pop(0)
-                tasks.append(asyncio.create_task(call()))
-    finally:
-        for t in tasks:
-            t.cancel()
-
-
 async def explain(inp: PlanInput, plan: Plan) -> dict:
     facts = _facts(inp, plan)
     key = hashlib.sha1(json.dumps(facts, sort_keys=True, default=str).encode()).hexdigest()
@@ -113,8 +82,8 @@ async def explain(inp: PlanInput, plan: Plan) -> dict:
     if not gemini.configured():
         return template(inp, plan)
     try:
-        out = await _hedged(lambda: gemini.generate_json(
-            "Explain this CarPlan result:\n" + json.dumps(facts, default=str), SCHEMA, SYSTEM))
+        out = await gemini.hedged(lambda: gemini.generate_json(
+            "Explain this CarPlan result:\n" + json.dumps(facts, default=str), SCHEMA, SYSTEM), hedges=(3, 7), timeout=12)
         out["source"] = "gemini"
     except Exception as e:
         print(f"explain: falling back to template ({type(e).__name__}: {e})")

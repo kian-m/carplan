@@ -1,5 +1,6 @@
 """Google Gemini via the google-genai SDK. Docs: https://ai.google.dev/gemini-api/docs"""
 
+import asyncio
 import json
 from typing import Any
 
@@ -58,12 +59,14 @@ async def generate_json(prompt: str, schema: dict[str, Any], system: str | None 
 
 async def extract_from_file(data: bytes, mime_type: str, prompt: str, schema: dict[str, Any]) -> Any:
     """Read a PDF or image and return JSON matching `schema`."""
+    s = get_settings()
     resp = await _get_client().aio.models.generate_content(
-        model=get_settings().gemini_model,
+        model=s.gemini_contract_model or s.gemini_model,
         contents=[types.Part.from_bytes(data=data, mime_type=mime_type), prompt],
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             response_json_schema=schema,
+            thinking_config=_thinking(),
         ),
     )
     return json.loads(resp.text or "null")
@@ -78,3 +81,33 @@ async def chat(messages: list[dict[str, str]], system: str | None = None) -> str
         config=types.GenerateContentConfig(system_instruction=system, thinking_config=_thinking()),
     )
     return resp.text or ""
+
+
+async def hedged(call, hedges: tuple[float, ...], timeout: float):
+    """Some Gemini calls stall for 15s or more while most finish quickly. Start an identical backup
+    call at each `hedges` mark (seconds) while none has answered, and return the first success."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    marks = [loop.time() + h for h in hedges]
+    tasks = [asyncio.create_task(call())]
+    error: BaseException | None = None
+    try:
+        while True:
+            wake = min([*marks, deadline])
+            pending = [t for t in tasks if not t.done()]
+            if pending:
+                done, _ = await asyncio.wait(pending, timeout=max(0, wake - loop.time()), return_when=asyncio.FIRST_COMPLETED)
+                for t in done:
+                    if t.exception() is None:
+                        return t.result()
+                    error = t.exception()
+            elif not marks:
+                raise error or TimeoutError("Gemini did not answer in time")
+            if loop.time() >= deadline:
+                raise TimeoutError("Gemini did not answer in time")
+            if marks and (loop.time() >= marks[0] or not pending):
+                marks.pop(0)
+                tasks.append(asyncio.create_task(call()))
+    finally:
+        for t in tasks:
+            t.cancel()

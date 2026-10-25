@@ -1,0 +1,473 @@
+{
+  "summary": {
+    "when": "2026-10-25T03:25:50+00:00",
+    "base_url": "http://localhost:8010",
+    "reads": 48,
+    "field_accuracy": 1.0,
+    "perfect_reads": 1.0,
+    "privacy_leaks": 0,
+    "latency_p50_s": 5.11,
+    "latency_p95_s": 8.86,
+    "errors": 0,
+    "by_field": {
+      "kind": 1.0,
+      "vin": 1.0,
+      "year": 1.0,
+      "make": 1.0,
+      "model": 1.0,
+      "monthly_payment": 1.0,
+      "term_months": 1.0,
+      "first_payment_date": 1.0,
+      "residual_value": 1.0,
+      "miles_allowed_per_year": 1.0,
+      "excess_mile_fee": 1.0,
+      "apr": 1.0,
+      "amount_financed": 1.0
+    },
+    "by_contract": {
+      "sample-lease-rav4-hybrid.pdf (pdf)": 1.0,
+      "sample-lease-rav4-hybrid.pdf (photo)": 1.0,
+      "sample-loan-camry.pdf (pdf)": 1.0,
+      "sample-loan-camry.pdf (photo)": 1.0,
+      "sample-lease-honda-civic.pdf (pdf)": 1.0,
+      "sample-lease-honda-civic.pdf (photo)": 1.0,
+      "sample-loan-nissan-altima.pdf (pdf)": 1.0,
+      "sample-loan-nissan-altima.pdf (photo)": 1.0
+    }
+  },
+  "leaks": [],
+  "reads": [
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.04,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 2.92,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 2.96,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 4.14,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.64,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.23,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 6.21,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 6.12,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.11,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.74,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.51,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.75,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 4.3,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.33,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.44,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 4.44,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.58,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 4.54,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.11,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 15.95,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 8.25,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.48,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.99,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 8.86,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 6.31,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 8.91,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 6.76,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.64,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.06,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 2.79,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 6.5,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 8.52,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 6.71,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 8.57,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.89,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 6.76,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.26,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 2.8,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 2.62,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 2.74,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.76,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 6.82,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 6.24,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.49,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.73,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.95,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.72,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.14,
+      "terms_explained": 3,
+      "wrong": {},
+      "error": null
+    }
+  ]
+}

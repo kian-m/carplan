@@ -1,0 +1,356 @@
+{
+  "summary": {
+    "when": "2026-10-25T03:24:05+00:00",
+    "base_url": "http://localhost:8010",
+    "reads": 24,
+    "field_accuracy": 0.9048,
+    "perfect_reads": 0.875,
+    "privacy_leaks": 0,
+    "latency_p50_s": 5.21,
+    "latency_p95_s": 50.01,
+    "errors": 2,
+    "by_field": {
+      "kind": 0.9167,
+      "vin": 0.875,
+      "year": 0.875,
+      "make": 0.9167,
+      "model": 0.9167,
+      "monthly_payment": 0.875,
+      "term_months": 0.875,
+      "first_payment_date": 0.9167,
+      "residual_value": 1.0,
+      "miles_allowed_per_year": 1.0,
+      "excess_mile_fee": 1.0,
+      "apr": 0.8333,
+      "amount_financed": 0.8333
+    },
+    "by_contract": {
+      "sample-lease-rav4-hybrid.pdf (pdf)": 1.0,
+      "sample-lease-rav4-hybrid.pdf (photo)": 1.0,
+      "sample-loan-camry.pdf (pdf)": 1.0,
+      "sample-loan-camry.pdf (photo)": 0.8667,
+      "sample-lease-honda-civic.pdf (pdf)": 1.0,
+      "sample-lease-honda-civic.pdf (photo)": 1.0,
+      "sample-loan-nissan-altima.pdf (pdf)": 0.3333,
+      "sample-loan-nissan-altima.pdf (photo)": 1.0
+    }
+  },
+  "leaks": [],
+  "reads": [
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 34.04,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 9.23,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 8.5,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 3.62,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 3.47,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-rav4-hybrid.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 15.47,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.71,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 5.28,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 15.33,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 0.6,
+      "seconds": 16.39,
+      "terms_explained": 0,
+      "wrong": {
+        "vin": {
+          "expected": "4T1G11AK8RU417806",
+          "got": null
+        },
+        "year": {
+          "expected": 2024,
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 676.64,
+          "got": null
+        },
+        "term_months": {
+          "expected": 72,
+          "got": null
+        }
+      },
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 15.17,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-camry.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 2.82,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.84,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.64,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 3.72,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 3.83,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.79,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-lease-honda-civic.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 5.14,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 0.0,
+      "seconds": 50.01,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "loan",
+          "got": null
+        },
+        "vin": {
+          "expected": "1N4BL4DV9PN337251",
+          "got": null
+        },
+        "year": {
+          "expected": 2023,
+          "got": null
+        },
+        "make": {
+          "expected": "Nissan",
+          "got": null
+        },
+        "model": {
+          "expected": "Altima",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 502.49,
+          "got": null
+        },
+        "term_months": {
+          "expected": 60,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2023-04-18",
+          "got": null
+        },
+        "apr": {
+          "expected": 6.49,
+          "got": null
+        },
+        "amount_financed": {
+          "expected": 25687.81,
+          "got": null
+        }
+      },
+      "error": "HTTPStatusError: Server error '504 Gateway Timeout' for url 'http://localhost:8010/api/contract/parse'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504"
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 1.0,
+      "seconds": 44.71,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "pdf",
+      "score": 0.0,
+      "seconds": 50.01,
+      "terms_explained": 0,
+      "wrong": {
+        "kind": {
+          "expected": "loan",
+          "got": null
+        },
+        "vin": {
+          "expected": "1N4BL4DV9PN337251",
+          "got": null
+        },
+        "year": {
+          "expected": 2023,
+          "got": null
+        },
+        "make": {
+          "expected": "Nissan",
+          "got": null
+        },
+        "model": {
+          "expected": "Altima",
+          "got": null
+        },
+        "monthly_payment": {
+          "expected": 502.49,
+          "got": null
+        },
+        "term_months": {
+          "expected": 60,
+          "got": null
+        },
+        "first_payment_date": {
+          "expected": "2023-04-18",
+          "got": null
+        },
+        "apr": {
+          "expected": 6.49,
+          "got": null
+        },
+        "amount_financed": {
+          "expected": 25687.81,
+          "got": null
+        }
+      },
+      "error": "HTTPStatusError: Server error '504 Gateway Timeout' for url 'http://localhost:8010/api/contract/parse'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504"
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 3.05,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 29.36,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    },
+    {
+      "contract": "sample-loan-nissan-altima.pdf",
+      "variant": "photo",
+      "score": 1.0,
+      "seconds": 4.8,
+      "terms_explained": 4,
+      "wrong": {},
+      "error": null
+    }
+  ]
+}

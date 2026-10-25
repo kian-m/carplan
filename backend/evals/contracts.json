@@ -1,0 +1,56 @@
+{
+  "_about": "Ground truth for the sample contracts in /samples. Every value is printed on the contract. `pii` lists strings that must never come back from the reader.",
+  "pii": ["Alex Rivera", "Rivera", "4410 Avenue F", "78751", "LS-2024-", "RI-2025-", "RI-2023-", "Dealer No"],
+  "contracts": {
+    "sample-lease-rav4-hybrid.pdf": {
+      "kind": "lease",
+      "vin": "2T3RWRFV4PW058213",
+      "year": 2023,
+      "make": "Toyota",
+      "model": "RAV4",
+      "monthly_payment": 438.16,
+      "term_months": 36,
+      "first_payment_date": "2024-02-27",
+      "residual_value": 22450,
+      "miles_allowed_per_year": 10000,
+      "excess_mile_fee": 0.15
+    },
+    "sample-loan-camry.pdf": {
+      "kind": "loan",
+      "vin": "4T1G11AK8RU417806",
+      "year": 2024,
+      "make": "Toyota",
+      "model": "Camry",
+      "monthly_payment": 676.64,
+      "term_months": 72,
+      "first_payment_date": "2026-01-09",
+      "apr": 8.94,
+      "amount_financed": 37600
+    },
+    "sample-lease-honda-civic.pdf": {
+      "kind": "lease",
+      "vin": "2HGFE2F5XRH512384",
+      "year": 2024,
+      "make": "Honda",
+      "model": "Civic",
+      "monthly_payment": 362.92,
+      "term_months": 36,
+      "first_payment_date": "2024-07-15",
+      "residual_value": 15950,
+      "miles_allowed_per_year": 12000,
+      "excess_mile_fee": 0.15
+    },
+    "sample-loan-nissan-altima.pdf": {
+      "kind": "loan",
+      "vin": "1N4BL4DV9PN337251",
+      "year": 2023,
+      "make": "Nissan",
+      "model": "Altima",
+      "monthly_payment": 502.49,
+      "term_months": 60,
+      "first_payment_date": "2023-04-18",
+      "apr": 6.49,
+      "amount_financed": 25687.81
+    }
+  }
+}

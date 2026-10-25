@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # Google Gemini — see .env.example for how to get a key
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
+    gemini_contract_model: str = ""  # reads contracts; empty = gemini_model (see evals/contract_eval.py)
     gemini_thinking_level: str = "low"  # "", "low" or "high"; "" uses the model default
     gemini_vertex: bool = False  # true for Vertex AI express-mode keys (restricted to aiplatform)
 

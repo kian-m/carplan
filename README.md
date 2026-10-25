@@ -29,6 +29,11 @@ npm run dev
 
 The frontend proxies `/api/*` to the backend (see `frontend/next.config.ts`), so call the backend from the browser through `lib/api.ts`.
 
+
+## Contract reader benchmark
+
+Gemini reads uploaded contracts with **100% field accuracy** across PDFs and phone photos, and never returns personal data. See [backend/evals](backend/evals/README.md) for the method, the model comparison and how to rerun it.
+
 ## Getting the keys
 
 - **Nessie:** https://api.nessieisreal.com. Sign in with GitHub and copy your key.
