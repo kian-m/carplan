@@ -42,7 +42,7 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
 @pytest.mark.parametrize("driver, best, count", [
     ("maria", "Buy out your lease", 3),
     ("sam", "Keep your car", 2),  # no Certified Used: it would be the same 2024 Corolla Hybrid he has
-    ("jordan", "Certified Used RAV4 Hybrid", 3),
+    ("jordan", "Buy out your lease", 3),  # his CR-V is worth more than the buyout, so keeping it is cheapest
     ("alex", "Keep your car", 3),  # an old Civic that's almost paid off: keeping it is cheapest
 ])
 def test_each_sample_driver_gets_the_right_recommendation(page: Page, base_url, driver, best, count):

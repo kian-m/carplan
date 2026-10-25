@@ -34,12 +34,8 @@ async def _fuel(year: int, make: str, model: str) -> float:
 async def _plan(inp: PlanInput) -> dict:
     target = engine.toyota_target(inp)
     v = inp.vehicle
-    cpo_year = date.today().year - engine.ASSUMPTIONS["certified_used_age_years"]
-    cpo_car = market.Vehicle(year=cpo_year, make="Toyota", model=target, odometer=24000,
-                             msrp=engine.TOYOTA_MSRP.get(target))
-    est, cpo_est, fuel_now, fuel_target = await asyncio.gather(
+    est, fuel_now, fuel_target = await asyncio.gather(
         market.estimate(v),
-        market.estimate(cpo_car),
         _fuel(v.year, v.make, v.model),
         _fuel(min(date.today().year, 2025), "Toyota", target),  # EPA data lags the newest model year
     )
@@ -47,8 +43,7 @@ async def _plan(inp: PlanInput) -> dict:
         value, low, high, method = inp.market_value, est["low"], est["high"], "user"
     else:
         value, low, high, method = est["value"], est["low"], est["high"], est["method"]
-    plan = engine.build_plan(inp, value, low, high, method, est.get("sources", []), fuel_now, fuel_target,
-                             cpo_market=cpo_est)
+    plan = engine.build_plan(inp, value, low, high, method, est.get("sources", []), fuel_now, fuel_target)
     return {"input": inp.model_dump(), "plan": plan.model_dump(),
             "fuel": {"current_annual": fuel_now, "toyota_annual": fuel_target}}
 

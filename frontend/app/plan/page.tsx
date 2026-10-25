@@ -393,10 +393,11 @@ function Assumptions({ data }: { data: PlanResponse }) {
         average car loses 41.8% in 5 years. More if you drive over 12,000 miles a year (our estimate).
       </li>
       <li>
-        New Toyota prices: Toyota&rsquo;s 2026 starting prices from toyota.com, before the delivery fee. Certified Used: the
-        median of live listings for a {a.certified_used_age_years}-year-old model when we find at least 5, otherwise about{" "}
-        {pct(a.certified_used_price_pct_of_msrp)} of the new price (our estimate). Your equity, or what you owe beyond your
-        car&rsquo;s value, goes into the new loan.
+        New and Certified Used Toyota prices: each card names the trim. New prices are the toyota.com MSRP plus
+        Toyota&rsquo;s delivery fee; used prices are typical asking prices at Austin-area dealers, checked by hand in
+        October 2026. For other models we use Toyota&rsquo;s starting price, and about{" "}
+        {pct(a.certified_used_price_pct_of_msrp)} of it for a {a.certified_used_age_years}-year-old Certified Used one
+        (our estimate). Your equity, or what you owe beyond your car&rsquo;s value, goes into the new loan.
       </li>
       <li>
         New lease: {a.new_lease_term_months} months, {a.new_lease_miles_per_year.toLocaleString()} miles a year, worth{" "}

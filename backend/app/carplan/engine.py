@@ -54,6 +54,24 @@ TOYOTA_MSRP = {
     "4Runner": 42270, "bZ4X": 34900,
 }
 
+# Prices for the comparison Toyotas our sample drivers and sample contracts get, checked by hand
+# (Oct 25, 2026). New: toyota.com MSRP for the trim plus Toyota's delivery fee. Used: a typical asking
+# price for a 2-year-old one at Austin-area dealers. Other models use TOYOTA_MSRP and our estimate.
+COMPARISON_PRICES = {
+    "RAV4 Hybrid": {
+        "new_trim": "2026 RAV4 XLE Premium", "new_msrp": 36100, "delivery": 1450,
+        "used_trim": "2024 RAV4 Hybrid XLE", "used": 32200,
+    },
+    "Corolla Hybrid": {
+        "new_trim": "2027 Corolla Hybrid LE", "new_msrp": 25175, "delivery": 1195,
+        "used_trim": "2024 Corolla Hybrid LE", "used": 23500,
+    },
+    "Camry": {
+        "new_trim": "2027 Camry SE", "new_msrp": 32200, "delivery": 1195,
+        "used_trim": "2024 Camry SE", "used": 26200,
+    },
+}
+
 # For current Toyota drivers: the next model we'd suggest (hybrid where one exists).
 TOYOTA_UPGRADE = {
     "corolla": "Corolla Hybrid", "corolla cross": "Corolla Cross Hybrid", "rav4": "RAV4 Hybrid",
@@ -109,7 +127,7 @@ def lease_payment(cap_cost: float, residual: float, money_factor: float, months:
     return max(0.0, (cap_cost - residual) / months + (cap_cost + residual) * money_factor)
 
 
-def depreciate(value: float, years: float, make: str, miles_per_year: int) -> float:
+def depreciate(value: float, years: float, miles_per_year: int) -> float:
     rate = ASSUMPTIONS["depreciation_per_year"]
     rate += max(0, miles_per_year - 12000) / 3000 * 0.01  # high mileage loses value faster
     return value * (1 - rate) ** years
@@ -147,7 +165,6 @@ def build_plan(
     market_sources: list[dict],
     fuel_current: float,
     fuel_target: float,
-    cpo_market: dict | None = None,  # live listings for the Certified Used model, when we found them
 ) -> Plan:
     A = ASSUMPTIONS
     v, c, f = inp.vehicle, inp.contract, inp.finances
@@ -157,6 +174,16 @@ def build_plan(
     years = H / 12
     target = toyota_target(inp)
     target_msrp = TOYOTA_MSRP.get(target, 33000)
+    # What dealers near Austin actually ask for a new one, when we have enough listings; else the starting MSRP.
+    prices = COMPARISON_PRICES.get(target)
+    if prices:
+        target_msrp = prices["new_msrp"]
+        new_price = prices["new_msrp"] + prices["delivery"]
+        new_source = (f"{prices['new_trim']}: ${prices['new_msrp']:,.0f} MSRP plus ${prices['delivery']:,.0f} delivery "
+                      "(toyota.com).")
+    else:
+        new_price = target_msrp
+        new_source = f"Starts at ${target_msrp:,.0f} (Toyota's starting price, before the delivery fee)."
     ins = A["insurance_monthly"]
     age_now = max(0.0, date.today().year - v.year + 0.5)
     budget = A["max_car_budget_pct_of_income"] * f.monthly_income
@@ -171,7 +198,7 @@ def build_plan(
         allowed = (c.miles_allowed_per_year or 12000) * c.term_months / 12
         excess_miles = max(0, int(odo_end - allowed))
         excess_fee = excess_miles * c.excess_mile_fee
-        value_at_decision = depreciate(market_value, months_left / 12, v.make, mpy)
+        value_at_decision = depreciate(market_value, months_left / 12, mpy)
         payoff = (c.residual_value or 0) + A["purchase_option_fee"]
         age_at_decision = age_now + months_left / 12
         odo_at_decision = odo_end
@@ -230,7 +257,7 @@ def build_plan(
         financed = payoff * (1 + A["sales_tax_rate"]) + A["dealer_fees"]
         pm = payment(financed, A["buyout_apr"], A["buyout_term_months"])
         bal_end = balance_after(financed, A["buyout_apr"], A["buyout_term_months"], H)
-        value_end = depreciate(value_at_decision, years, v.make, mpy)
+        value_end = depreciate(value_at_decision, years, mpy)
         options.append(option(
             "buy_out", "Buy out your lease", current_label, pm,
             CostBreakdown(
@@ -241,13 +268,13 @@ def build_plan(
             [f"Buyout price: ${payoff:,.0f}. Worth about ${value_at_decision:,.0f} when your lease ends.",
              "No mileage limits or lease-end charges.",
              f"Includes ${financed - payoff:,.0f} in sales tax and fees."],
-            ["payoff_quote"], payoff / max(value_at_decision, 1),
+            ["payoff_quote"] if c.lender == "TFS" else [], payoff / max(value_at_decision, 1),  # TFS quotes only its own leases
         ))
     else:
         pm = c.monthly_payment if c.kind == "loan" else 0.0
         paid_months = min(H, months_left)
         bal_end = balance_after(c.amount_financed or 0, c.apr or 0, c.term_months, c.months_elapsed + H) if c.kind == "loan" else 0
-        value_end = depreciate(value_at_decision, years, v.make, mpy)
+        value_end = depreciate(value_at_decision, years, mpy)
         options.append(option(
             "keep", "Keep your car", current_label, pm,
             CostBreakdown(
@@ -266,7 +293,7 @@ def build_plan(
     new_ins = ins * A["new_car_insurance_multiplier"]
     if inp.path == "toyota" and c.kind == "lease":
         term = A["new_lease_term_months"]
-        cap = target_msrp * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
+        cap = new_price * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
         residual = target_msrp * A["new_lease_residual_pct"]
         pm = lease_payment(cap, residual, A["new_lease_money_factor"], term)
         options.append(option(
@@ -275,15 +302,15 @@ def build_plan(
                 payments=pm * H, fuel=fuel(fuel_target, mpy, H), maintenance=maintenance(0, years, True, True),
                 insurance=new_ins * H, fees=fees, equity_credit=0,
             ),
-            [f"Starts at ${target_msrp:,.0f} (Toyota's starting price, before the delivery fee).", *down,
+            [new_source, *down,
              "Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["turn_in_new", "repeat_customer"],
         ))
     else:
-        principal = target_msrp * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
+        principal = new_price * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
         pm = payment(principal, A["new_apr"], A["finance_term_months"])
         bal_end = balance_after(principal, A["new_apr"], A["finance_term_months"], H)
-        value_end = target_msrp * (1 - A["new_car_first_year_depreciation"]) * (1 - A["depreciation_per_year"]) ** (years - 1)
+        value_end = new_price * (1 - A["new_car_first_year_depreciation"]) * (1 - A["depreciation_per_year"]) ** (years - 1)
         options.append(option(
             "new_toyota", f"Get a new {target}", f"New {target}", pm,
             CostBreakdown(
@@ -291,27 +318,26 @@ def build_plan(
                 maintenance=maintenance(0, years, True, True), insurance=new_ins * H, fees=fees,
                 equity_at_end=value_end - bal_end,
             ),
-            [f"Starts at ${target_msrp:,.0f} (Toyota's starting price, before the delivery fee).", *down,
+            [new_source, *down,
              "Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["finance_new"] + (["repeat_customer"] if c.lender == "TFS" else ["prequalify"]),
-            principal / target_msrp,
+            principal / new_price,
         ))
 
     # 3. Toyota Certified Used, unless that's the same model and year (or older) than the car they have
     cpo_year = date.today().year - A["certified_used_age_years"]
     same_car = is_toyota and target.lower() == v.model.lower() and v.year >= cpo_year
-    # Only trust live used prices backed by enough listings and below the new price; a handful of
-    # top-trim listings can otherwise price a used car above a new one.
-    live_cpo = (cpo_market and cpo_market.get("method") == "listings" and cpo_market.get("listing_count", 0) >= 5
-                and cpo_market["value"] < target_msrp * 0.95)
-    cpo_price = cpo_market["value"] if live_cpo else target_msrp * A["certified_used_price_pct_of_msrp"]
-    cpo_source = (f"Priced at ${cpo_price:,.0f} from {cpo_market['listing_count']} listings for used {cpo_year} {target}s near Austin."
-                  if live_cpo else f"Priced at about ${cpo_price:,.0f} (our estimate: {A['certified_used_price_pct_of_msrp']:.0%} of the new price).")
+    if prices:
+        cpo_price = prices["used"]
+        cpo_source = f"{prices['used_trim']}: about ${cpo_price:,.0f}, a typical price at Austin-area dealers."
+    else:
+        cpo_price = target_msrp * A["certified_used_price_pct_of_msrp"]
+        cpo_source = f"Priced at about ${cpo_price:,.0f} (our estimate: {A['certified_used_price_pct_of_msrp']:.0%} of the new price)."
 
     principal = cpo_price * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
     pm = payment(principal, A["certified_used_apr"], A["finance_term_months"])
     bal_end = balance_after(principal, A["certified_used_apr"], A["finance_term_months"], H)
-    value_end = depreciate(cpo_price, years, "toyota", mpy)
+    value_end = depreciate(cpo_price, years, mpy)
     if not same_car: options.append(option(
         "certified_used", f"Certified Used {target}", f"{cpo_year} {target}", pm,
         CostBreakdown(

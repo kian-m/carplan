@@ -47,8 +47,8 @@ A cheat sheet for judging Q&A. **Live** means pulled from a real data source for
 | **Lease return fee** | Fact (TFS) | Disposition fee up to $350, waived when you replace it with a new or certified Toyota through TFS |
 | **Loan rates** | Example | New Toyota 5.49% for 60 months; Certified Used and buyouts 6.49% (buyout over 48 months). Labeled as examples, not offers |
 | **New lease** | Example | 36 months, 60% residual, money factor 0.0021, 12,000 miles a year |
-| **Certified Used price** | Live / Estimate | Median of SerpApi listings for the 2-year-old model near Austin, when there are at least 5 and the median is under 95% of the new price; otherwise 87% of the new price (our estimate) |
-| **Toyota prices** | Fact | 2026 starting MSRPs from toyota.com/all-vehicles (checked Oct 25, 2026), before delivery: Corolla Hybrid $24,975, Camry $29,600, RAV4 $31,900 (hybrid only for 2026) |
+| **Certified Used price** | Checked by hand | Typical asking price at Austin-area dealers, Oct 2026: 2024 RAV4 Hybrid XLE $32,200, 2024 Corolla Hybrid LE $23,500, 2024 Camry SE $26,200 (Edmunds, Capital One, CarGurus, TrueCar, Cars.com). Other models: 87% of the new price (our estimate) |
+| **Toyota prices** | Fact | Trim MSRP from toyota.com plus delivery (Toyota pricing sheet, Nov 2025): 2026 RAV4 XLE Premium $36,100 + $1,450, 2027 Corolla Hybrid LE $25,175 + $1,195, 2027 Camry SE $32,200 + $1,195. Other models: 2026 starting MSRP from toyota.com |
 
 ## How the recommendation is picked
 
