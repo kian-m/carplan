@@ -26,10 +26,9 @@ ASSUMPTIONS = {
     "certified_used_age_years": 2,
     "insurance_monthly": 165,
     "new_car_insurance_multiplier": 1.08,
-    # Annual resale-value loss by brand (industry averages; Honda and Subaru hold value nearly as well as Toyota).
-    "depreciation_per_year": {"toyota": 0.10, "lexus": 0.10, "honda": 0.11, "subaru": 0.115, "mazda": 0.12,
-                              "hyundai": 0.13, "kia": 0.13, "ford": 0.14, "chevrolet": 0.14, "nissan": 0.14,
-                              "default": 0.13},
+    # Yearly resale-value loss, the same for every brand: iSeeCars' 2026 study found the average car
+    # loses 41.8% over 5 years, which is about 10.3% a year. No reliable brand-by-brand figures exist.
+    "depreciation_per_year": 0.103,
     "sales_tax_rate": 0.0625,  # Texas motor vehicle sales tax, applied whenever you buy or lease a car
     "dealer_fees": 225,  # Texas documentary fee presumed reasonable by the OCCC
     "new_car_first_year_depreciation": 0.15,
@@ -46,11 +45,13 @@ ASSUMPTIONS = {
 }
 
 # Approximate starting MSRPs for current Toyota models.
+# Starting MSRP of the 2026 models from toyota.com/all-vehicles (checked Oct 25, 2026), before the
+# delivery fee. The 2026 RAV4 is hybrid only; the bZ4X is now called the bZ.
 TOYOTA_MSRP = {
-    "Corolla": 23500, "Corolla Hybrid": 25000, "Corolla Cross Hybrid": 30000, "Prius": 29000,
-    "Camry": 29500, "RAV4": 30500, "RAV4 Hybrid": 33000, "Highlander Hybrid": 46000,
-    "Grand Highlander Hybrid": 48000, "Sienna": 40500, "Tacoma": 33500, "Tundra": 42000,
-    "4Runner": 42000, "bZ4X": 38000,
+    "Corolla": 23125, "Corolla Hybrid": 24975, "Corolla Cross Hybrid": 29795, "Prius": 28550,
+    "Camry": 29600, "RAV4": 31900, "RAV4 Hybrid": 31900, "Highlander Hybrid": 48020,
+    "Grand Highlander Hybrid": 45610, "Sienna": 41320, "Tacoma": 32545, "Tundra": 41260,
+    "4Runner": 42270, "bZ4X": 34900,
 }
 
 # For current Toyota drivers: the next model we'd suggest (hybrid where one exists).
@@ -109,8 +110,7 @@ def lease_payment(cap_cost: float, residual: float, money_factor: float, months:
 
 
 def depreciate(value: float, years: float, make: str, miles_per_year: int) -> float:
-    table = ASSUMPTIONS["depreciation_per_year"]
-    rate = table.get(make.lower(), table["default"])
+    rate = ASSUMPTIONS["depreciation_per_year"]
     rate += max(0, miles_per_year - 12000) / 3000 * 0.01  # high mileage loses value faster
     return value * (1 - rate) ** years
 
@@ -147,6 +147,7 @@ def build_plan(
     market_sources: list[dict],
     fuel_current: float,
     fuel_target: float,
+    cpo_market: dict | None = None,  # live listings for the Certified Used model, when we found them
 ) -> Plan:
     A = ASSUMPTIONS
     v, c, f = inp.vehicle, inp.contract, inp.finances
@@ -211,7 +212,8 @@ def build_plan(
     def option(id_, title, label, monthly, b: CostBreakdown, notes, products, ltv=None):
         total = b.payments + b.fuel + b.maintenance + b.insurance + b.fees - b.equity_credit - b.equity_at_end
         car_monthly = monthly + ins
-        affordable = car_monthly <= budget and car_monthly <= disposable * 0.6
+        # No income on file (e.g. opened from an email link): skip the budget check rather than fail every option.
+        affordable = f.monthly_income <= 0 or (car_monthly <= budget and car_monthly <= disposable * 0.6)
         return Option(
             id=id_, title=title, vehicle_label=label, monthly_payment=round(monthly, 2),
             true_monthly_cost=round(total / H, 2), total_cost=round(total, 2),
@@ -259,6 +261,8 @@ def build_plan(
 
     # 2. A new Toyota: lease for current Toyota lessees, finance otherwise
     fees, credit, _ = exit_terms(True)
+    down = ([f"Your ${credit:,.0f} in equity goes toward it as a down payment."] if credit > 0 else
+            [f"The ${-credit:,.0f} you owe beyond your car's value is added to this loan."] if credit < 0 else [])
     new_ins = ins * A["new_car_insurance_multiplier"]
     if inp.path == "toyota" and c.kind == "lease":
         term = A["new_lease_term_months"]
@@ -271,14 +275,15 @@ def build_plan(
                 payments=pm * H, fuel=fuel(fuel_target, mpy, H), maintenance=maintenance(0, years, True, True),
                 insurance=new_ins * H, fees=fees, equity_credit=0,
             ),
-            ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
+            [f"Starts at ${target_msrp:,.0f} (Toyota's starting price, before the delivery fee).", *down,
+             "Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["turn_in_new", "repeat_customer"],
         ))
     else:
         principal = target_msrp * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
         pm = payment(principal, A["new_apr"], A["finance_term_months"])
         bal_end = balance_after(principal, A["new_apr"], A["finance_term_months"], H)
-        value_end = target_msrp * (1 - A["new_car_first_year_depreciation"]) * (1 - A["depreciation_per_year"]["toyota"]) ** (years - 1)
+        value_end = target_msrp * (1 - A["new_car_first_year_depreciation"]) * (1 - A["depreciation_per_year"]) ** (years - 1)
         options.append(option(
             "new_toyota", f"Get a new {target}", f"New {target}", pm,
             CostBreakdown(
@@ -286,7 +291,8 @@ def build_plan(
                 maintenance=maintenance(0, years, True, True), insurance=new_ins * H, fees=fees,
                 equity_at_end=value_end - bal_end,
             ),
-            ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
+            [f"Starts at ${target_msrp:,.0f} (Toyota's starting price, before the delivery fee).", *down,
+             "Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["finance_new"] + (["repeat_customer"] if c.lender == "TFS" else ["prequalify"]),
             principal / target_msrp,
         ))
@@ -294,7 +300,14 @@ def build_plan(
     # 3. Toyota Certified Used, unless that's the same model and year (or older) than the car they have
     cpo_year = date.today().year - A["certified_used_age_years"]
     same_car = is_toyota and target.lower() == v.model.lower() and v.year >= cpo_year
-    cpo_price = target_msrp * A["certified_used_price_pct_of_msrp"]
+    # Only trust live used prices backed by enough listings and below the new price; a handful of
+    # top-trim listings can otherwise price a used car above a new one.
+    live_cpo = (cpo_market and cpo_market.get("method") == "listings" and cpo_market.get("listing_count", 0) >= 5
+                and cpo_market["value"] < target_msrp * 0.95)
+    cpo_price = cpo_market["value"] if live_cpo else target_msrp * A["certified_used_price_pct_of_msrp"]
+    cpo_source = (f"Priced at ${cpo_price:,.0f} from {cpo_market['listing_count']} listings for used {cpo_year} {target}s near Austin."
+                  if live_cpo else f"Priced at about ${cpo_price:,.0f} (our estimate: {A['certified_used_price_pct_of_msrp']:.0%} of the new price).")
+
     principal = cpo_price * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
     pm = payment(principal, A["certified_used_apr"], A["finance_term_months"])
     bal_end = balance_after(principal, A["certified_used_apr"], A["finance_term_months"], H)
@@ -306,7 +319,7 @@ def build_plan(
             maintenance=maintenance(A["certified_used_age_years"], years, True, False), insurance=ins * H,
             fees=fees, equity_at_end=value_end - bal_end,
         ),
-        ["Checked on 160 points. Comes with a Toyota warranty and 1 year of roadside help."],
+        [cpo_source, *down, "Checked on 160 points. Comes with a Toyota warranty and 1 year of roadside help."],
         ["certified_used"], principal / cpo_price,
     ))
 
@@ -349,8 +362,13 @@ def build_plan(
         if c.lender == "TFS":
             rec("repeat_customer", "You already finance with TFS, so you may get repeat customer savings.", "medium")
         else:
-            rec("prequalify", "Find out what you could qualify for with Toyota Financial Services. It takes a few steps.", "medium")
-        rec("insurance", "Get a Toyota Insurance quote for your new car.", "low")
+            rec("prequalify", "Apply for credit online with TFS before you visit a dealer. Applying doesn't mean you have to buy.", "medium")
+    # Toyota Insurance quotes auto, home and renters from many insurers, so it fits every driver.
+    if best.id in ("new_toyota", "certified_used"):
+        rec("insurance", "Get a Toyota Insurance quote for your new car. It compares rates from many insurers.", "low")
+    else:
+        rec("insurance", f"See if Toyota Insurance can lower what you pay to insure your {v.model}. "
+                         "It compares rates from many insurers.", "low")
     # Rebates apply to new Toyotas financed or leased through TFS (not Certified Used), one per purchase.
     if best.id == "new_toyota" and "college" in inp.flags:
         rec("college_rebate", "Recent grads may get a rebate on a new Toyota through TFS. Ask a dealer if you qualify.", "medium")

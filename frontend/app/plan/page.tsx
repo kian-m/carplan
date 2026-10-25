@@ -7,6 +7,8 @@ import { Alert, Bell, Car, Check, Dollar, Gauge, Shield, Tag, Umbrella, Wrench }
 import {
   carplan,
   INPUT_KEY,
+  packPlan,
+  unpackPlan,
   usd,
   type Explanation,
   type Option,
@@ -321,16 +323,12 @@ function Adjusters({
 // --- other brands: your car vs. the Toyota -----------------------------------
 
 function Compare({ data }: { data: PlanResponse }) {
-  const a = data.plan.assumptions as Record<string, number & Record<string, number>>;
   const v = data.input.vehicle;
   const target = data.plan.toyota_equivalent;
   const scale = data.input.miles_per_year / 15000;
-  const dep = a.depreciation_per_year;
-  const rate = (make: string) => dep[make.toLowerCase()] ?? dep.default;
   const rows: [string, string, string][] = [
     ["Gas a year", usd(data.fuel.current_annual * scale), usd(data.fuel.toyota_annual * scale)],
-    ["Value lost a year", `${Math.round(rate(v.make) * 100)}%`, `${Math.round(rate("toyota") * 100)}%`],
-    ["Free scheduled service", "None", "2 years (new)"],
+    ["ToyotaCare free service", "Not included", "2 years (new)"],
   ];
   return (
     <section className="mt-6 rounded-[3px] border border-tline p-5">
@@ -391,12 +389,14 @@ function Assumptions({ data }: { data: PlanResponse }) {
         that. Other brands cost {pct(a.non_toyota_maintenance_multiplier - 1)} more. New Toyotas get 2 years of free service.
       </li>
       <li>
-        Value loss: about {pct(a.depreciation_per_year.toyota)} a year for a Toyota, more for most other brands, and more if you
-        drive over 12,000 miles a year. These are our estimates.
+        Value loss: about {pct(a.depreciation_per_year as unknown as number)} a year for every brand, from iSeeCars&rsquo; finding that the
+        average car loses 41.8% in 5 years. More if you drive over 12,000 miles a year (our estimate).
       </li>
       <li>
-        New Toyota prices: approximate starting prices. Certified Used: about {pct(a.certified_used_price_pct_of_msrp)} of the new
-        price, for a {a.certified_used_age_years}-year-old car. These are our estimates.
+        New Toyota prices: Toyota&rsquo;s 2026 starting prices from toyota.com, before the delivery fee. Certified Used: the
+        median of live listings for a {a.certified_used_age_years}-year-old model when we find at least 5, otherwise about{" "}
+        {pct(a.certified_used_price_pct_of_msrp)} of the new price (our estimate). Your equity, or what you owe beyond your
+        car&rsquo;s value, goes into the new loan.
       </li>
       <li>
         New lease: {a.new_lease_term_months} months, {a.new_lease_miles_per_year.toLocaleString()} miles a year, worth{" "}
@@ -618,7 +618,7 @@ function Catalog({ plan }: { plan: PlanResponse["plan"] }) {
 
 // --- recall alerts -----------------------------------------------------------
 
-function RecallAlerts({ input }: { input: PlanInput }) {
+function RecallAlerts({ input, driver }: { input: PlanInput; driver: string | null }) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
@@ -629,7 +629,8 @@ function RecallAlerts({ input }: { input: PlanInput }) {
     e.preventDefault();
     setState("sending");
     try {
-      const r = await carplan.subscribe({ email, year: v.year, make: v.make, model: v.model, vin: v.vin });
+      const plan_path = driver ? `/plan?driver=${driver}` : `/plan?p=${packPlan(input)}`;
+      const r = await carplan.subscribe({ email, year: v.year, make: v.make, model: v.model, vin: v.vin, plan_path });
       setState("done");
       const recalls = r.open_recalls
         ? `Your ${car} has ${r.open_recalls} open safety recall${r.open_recalls === 1 ? "" : "s"} right now.`
@@ -720,6 +721,7 @@ function PlanPage() {
   const router = useRouter();
   const params = useSearchParams();
   const driver = params.get("driver");
+  const packed = params.get("p"); // a plan link from a recall email
   const [input, setInput] = useState<PlanInput | null>(null);
   const [value, setValue] = useState<number | null>(null);
   const [miles, setMiles] = useState<number | null>(null);
@@ -735,6 +737,14 @@ function PlanPage() {
     setError(null);
     if (driver) {
       carplan.driver(driver).then(setInput).catch((e) => setError(e.message));
+    } else if (packed) {
+      try {
+        const restored = unpackPlan(packed);
+        sessionStorage.setItem(INPUT_KEY, JSON.stringify(restored));
+        setInput(restored);
+      } catch {
+        setError("That link didn't work. Add your car to see your plan.");
+      }
     } else {
       try {
         const saved = sessionStorage.getItem(INPUT_KEY);
@@ -744,7 +754,7 @@ function PlanPage() {
         setError("Add your car first.");
       }
     }
-  }, [driver]);
+  }, [driver, packed]);
 
   const effective = useMemo<PlanInput | null>(
     () => (input ? { ...input, miles_per_year: miles ?? input.miles_per_year, market_value: value } : null),
@@ -844,6 +854,12 @@ function PlanPage() {
           Start over
         </Link>
       </div>
+      {!input.finances.monthly_income && (
+        <p className="mt-4 rounded-[3px] bg-tsurface p-3 text-sm">
+          Welcome back. Your income isn&rsquo;t saved in your link, so this plan doesn&rsquo;t check your budget. Use{" "}
+          <span className="font-semibold">Edit your details</span> to add it.
+        </p>
+      )}
       <Answer input={input} data={data} explanation={explanation} gap={gap} updating={updating && !!explanation} />
       <Adjusters data={data} value={value} setValue={setValue} miles={miles} setMiles={setMiles} />
       {input.path === "other" && data.plan.toyota_equivalent && <Compare data={data} />}
@@ -871,7 +887,7 @@ function PlanPage() {
 
       <Products recs={others} disclosure={data.plan.disclosure} />
       <Catalog plan={data.plan} />
-      <RecallAlerts input={input} />
+      <RecallAlerts input={input} driver={driver} />
 
       <details className="mt-12 text-sm">
         <summary className="cursor-pointer font-semibold">How we calculated this</summary>

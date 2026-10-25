@@ -34,8 +34,12 @@ async def _fuel(year: int, make: str, model: str) -> float:
 async def _plan(inp: PlanInput) -> dict:
     target = engine.toyota_target(inp)
     v = inp.vehicle
-    est, fuel_now, fuel_target = await asyncio.gather(
+    cpo_year = date.today().year - engine.ASSUMPTIONS["certified_used_age_years"]
+    cpo_car = market.Vehicle(year=cpo_year, make="Toyota", model=target, odometer=24000,
+                             msrp=engine.TOYOTA_MSRP.get(target))
+    est, cpo_est, fuel_now, fuel_target = await asyncio.gather(
         market.estimate(v),
+        market.estimate(cpo_car),
         _fuel(v.year, v.make, v.model),
         _fuel(min(date.today().year, 2025), "Toyota", target),  # EPA data lags the newest model year
     )
@@ -43,7 +47,8 @@ async def _plan(inp: PlanInput) -> dict:
         value, low, high, method = inp.market_value, est["low"], est["high"], "user"
     else:
         value, low, high, method = est["value"], est["low"], est["high"], est["method"]
-    plan = engine.build_plan(inp, value, low, high, method, est.get("sources", []), fuel_now, fuel_target)
+    plan = engine.build_plan(inp, value, low, high, method, est.get("sources", []), fuel_now, fuel_target,
+                             cpo_market=cpo_est)
     return {"input": inp.model_dump(), "plan": plan.model_dump(),
             "fuel": {"current_annual": fuel_now, "toyota_annual": fuel_target}}
 
@@ -204,11 +209,12 @@ class SubscribeIn(BaseModel):
     make: str
     model: str
     vin: str | None = None
+    plan_path: str | None = None  # e.g. /plan?driver=maria or /plan?p=<packed car and contract>
 
 
 @router.post("/alerts/subscribe")
 async def alerts_subscribe(body: SubscribeIn):
-    return await alerts.subscribe(body.email, body.year, body.make, body.model, body.vin)
+    return await alerts.subscribe(body.email, body.year, body.make, body.model, body.vin, body.plan_path)
 
 
 @router.get("/alerts/unsubscribe", response_class=HTMLResponse)

@@ -77,9 +77,27 @@ DRIVERS: dict[str, dict] = {
         "bills": [("West Campus Apartments", 1500), ("Austin Energy", 150), ("Visible Wireless", 45),
                   ("Gold's Gym", 60), ("Nelnet Student Loan", 240), ("Toyota Financial Services", 399)],
     },
+    # An older car bought used, nearly paid off: keeping it should win on cost, and CarPlan says so.
+    "alex": {
+        "first": "Alex", "last": "Rivera",
+        "tagline": "Bought used, almost paid off",
+        "input": PlanInput(
+            path="other", name="Alex",
+            vehicle=Vehicle(year=2015, make="Honda", model="Civic", trim="LX", odometer=112000,
+                            msrp=19290),  # 2015 Civic LX sedan with CVT, before destination
+            contract=Contract(kind="loan", monthly_payment=215, term_months=48, months_elapsed=43,
+                              apr=8.9, amount_financed=8900, lender="Hill Country Credit Union"),
+            finances=Finances(monthly_income=4300, monthly_bills=2040, checking_balance=2600),
+            miles_per_year=12000,
+        ),
+        "income": 4300, "checking": 2600,
+        "bills": [("Cherrywood Apartments", 1350), ("Austin Energy", 130), ("Mint Mobile", 30),
+                  ("Spectrum Internet", 65), ("GEICO", 140), ("Austin Community College", 325),
+                  ("Hill Country Credit Union", 215)],
+    },
 }
 
-CAR_LENDERS = ("toyota financial", "honda finance")
+CAR_LENDERS = ("toyota financial", "honda finance", "hill country credit union")
 _nessie_ids: dict[str, str] = {}
 
 

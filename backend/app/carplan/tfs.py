@@ -32,28 +32,28 @@ PRODUCTS: dict[str, dict] = {
         "url": f"{TFS}/financing_options/buy_a_toyota.html",
     },
     "prequalify": {
-        "name": "Get prequalified",
+        "name": "Apply for credit online",
         "category": "Financing",
-        "description": "Find out if you're prequalified in just a few steps.",
+        "description": "Apply with TFS before you visit a dealer. Applying doesn't mean you have to buy.",
         "url": f"{TFS}/planning_tools/apply_for_credit.html",
     },
     # Rebates
     "repeat_customer": {
         "name": "Repeat Customer benefits",
         "category": "Rebates",
-        "description": "Offers for people who have leased or financed with TFS before.",
+        "description": "Benefits for people who have leased or financed with TFS, like a waived lease return fee.",
         "url": f"{TFS}/financing_options/rebate_finance_programs/repeat_customers.html",
     },
     "college_rebate": {
         "name": "College Rebate Program",
         "category": "Rebates",
-        "description": "A rebate on a new Toyota for recent grads and some students. Not for Certified Used.",
+        "description": "When offered, a rebate on a new Toyota for recent grads and some students. Not for Certified Used.",
         "url": f"{TFS}/financing_options/rebate_finance_programs/college_rebate_program.html",
     },
     "military_rebate": {
         "name": "Military Rebate",
         "category": "Rebates",
-        "description": "A rebate for eligible military members. Ask a dealer if you qualify.",
+        "description": "When offered, a rebate on a new Toyota for eligible military members. Ask a dealer.",
         "url": f"{TFS}/financing_options/rebate_finance_programs/military_rebate_program.html",
     },
     # Voluntary protection (optional, cancellable, not required to obtain credit)
@@ -96,8 +96,8 @@ PRODUCTS: dict[str, dict] = {
     "insurance": {
         "name": "Toyota Insurance",
         "category": "Insurance",
-        "description": "Car, home and renters insurance for Toyota drivers.",
-        "url": f"{TFS}.html",
+        "description": "Toyota's own insurance agency, with auto, home and renters quotes from many insurers.",
+        "url": "https://toyotainsurance.com/",
     },
 }
 
@@ -107,7 +107,7 @@ CTA = {
     "turn_in_new": "See lease-end options",
     "finance_new": "See financing options",
     "certified_used": "Browse Certified Used",
-    "prequalify": "Get prequalified with TFS",
+    "prequalify": "Apply for credit with TFS",
     "repeat_customer": "See repeat customer savings",
     "college_rebate": "See the College Rebate",
     "military_rebate": "See the Military Rebate",

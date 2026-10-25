@@ -1,5 +1,7 @@
 """CarPlan end to end: every path a driver can take, checked in a real browser."""
 
+import base64
+import json
 import re
 
 import httpx
@@ -31,7 +33,7 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
     expect(page.get_by_role("heading", level=1)).to_contain_text("next move")
     expect(page.get_by_role("link", name=re.compile("I drive a Toyota"))).to_have_attribute("href", "/start?path=toyota")
     expect(page.get_by_role("link", name=re.compile("I drive another brand"))).to_have_attribute("href", "/start?path=other")
-    for name in ("Maria Lopez", "Sam Patel", "Jordan Kim", "Taylor Nguyen"):
+    for name in ("Maria Lopez", "Sam Patel", "Jordan Kim", "Taylor Nguyen", "Alex Rivera"):
         expect(page.get_by_text(name)).to_be_visible()
 
 
@@ -41,6 +43,7 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
     ("maria", "Buy out your lease", 3),
     ("sam", "Keep your car", 2),  # no Certified Used: it would be the same 2024 Corolla Hybrid he has
     ("jordan", "Certified Used RAV4 Hybrid", 3),
+    ("alex", "Keep your car", 3),  # an old Civic that's almost paid off: keeping it is cheapest
 ])
 def test_each_sample_driver_gets_the_right_recommendation(page: Page, base_url, driver, best, count):
     open_plan(page, base_url, driver)
@@ -134,6 +137,17 @@ def test_edit_details_keeps_what_you_entered(page: Page, base_url):
     expect(page.get_by_text("Sam's 2024 Toyota Corolla Hybrid")).to_be_visible()
 
 
+def test_recall_email_link_reopens_the_plan(page: Page, base_url):
+    # The link packs the car and contract (no income) the same way the frontend does.
+    car = httpx.get(f"{base_url}/api/drivers/sam", timeout=30).json()
+    packed = base64.urlsafe_b64encode(json.dumps(
+        {k: car[k] for k in ("path", "name", "vehicle", "contract", "miles_per_year")}).encode()).decode().rstrip("=")
+    page.goto(f"{base_url}/plan?p={packed}")
+    expect(page.get_by_text("Sam's 2024 Toyota Corolla Hybrid")).to_be_visible()
+    expect(page.get_by_text("Your income isn’t saved in your link")).to_be_visible()
+    expect(page.locator("#options article").first).to_be_visible()
+
+
 def test_unknown_page_points_home(page: Page, base_url):
     page.goto(f"{base_url}/no-such-page")
     expect(page.get_by_role("heading", name="We can’t find that page")).to_be_visible()
@@ -144,7 +158,7 @@ def test_unknown_page_points_home(page: Page, base_url):
 
 def test_upload_toyota_loan_contract_to_plan(page: Page, base_url):
     page.goto(f"{base_url}/start?path=toyota")
-    expect(page.get_by_text("Your file isn’t saved")).to_be_visible()
+    expect(page.get_by_text("We don’t save your file")).to_be_visible()
     page.set_input_files("input[type=file]", str(SAMPLES / "sample-loan-camry.pdf"))
     expect(page.get_by_text("We filled in what we found")).to_be_visible(timeout=60_000)
     expect(page.get_by_placeholder("Or enter your 17-character VIN")).to_have_value("4T1G11AK8RU417806")

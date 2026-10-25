@@ -41,14 +41,14 @@ A cheat sheet for judging Q&A. **Live** means pulled from a real data source for
 | **Fuel** | Live | **EPA fueleconomy.gov** yearly fuel cost for the exact car (EPA figure at 15,000 miles), scaled to the driver's miles. $1,900 a year if the EPA has no match |
 | **Maintenance (upkeep)** | Estimate | $450 a year for cars under 3, $750 for ages 3 to 5, $1,100 after. Other brands +20%. New Toyotas $0 for 2 years (ToyotaCare: 2 years / 25,000 miles) |
 | **Insurance** | Estimate | $165 a month; new cars +8% |
-| **Value loss (depreciation)** | Estimate | Per year: Toyota and Lexus 10%, Honda 11%, Subaru 11.5%, Mazda 12%, Hyundai and Kia 13%, Ford, Chevrolet and Nissan 14%, others 13%. +1% a year for every 3,000 miles over 12,000. New cars lose 15% the first year |
+| **Value loss (depreciation)** | Sourced | 10.3% a year for every brand: iSeeCars' 2026 study found the average car loses 41.8% over 5 years. +1% a year for every 3,000 miles over 12,000 (our estimate). New cars lose 15% the first year (our estimate) |
 | **Sales tax** | Fact | Texas motor vehicle sales tax, 6.25% |
 | **Dealer fees** | Fact-based | $225: the documentary fee the Texas OCCC presumes reasonable (dealers can charge more after filing) |
 | **Lease return fee** | Fact (TFS) | Disposition fee up to $350, waived when you replace it with a new or certified Toyota through TFS |
 | **Loan rates** | Example | New Toyota 5.49% for 60 months; Certified Used and buyouts 6.49% (buyout over 48 months). Labeled as examples, not offers |
 | **New lease** | Example | 36 months, 60% residual, money factor 0.0021, 12,000 miles a year |
-| **Certified Used price** | Estimate | 87% of the new price, for a 2-year-old model |
-| **Toyota prices** | Estimate | Approximate starting MSRPs, e.g. Corolla Hybrid $25,000, Camry $29,500, RAV4 Hybrid $33,000 |
+| **Certified Used price** | Live / Estimate | Median of SerpApi listings for the 2-year-old model near Austin, when there are at least 5 and the median is under 95% of the new price; otherwise 87% of the new price (our estimate) |
+| **Toyota prices** | Fact | 2026 starting MSRPs from toyota.com/all-vehicles (checked Oct 25, 2026), before delivery: Corolla Hybrid $24,975, Camry $29,600, RAV4 $31,900 (hybrid only for 2026) |
 
 ## How the recommendation is picked
 

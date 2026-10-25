@@ -152,7 +152,7 @@ export const carplan = {
     form.append("file", file);
     return call<ParsedContract>("/contract/parse", { method: "POST", body: form });
   },
-  subscribe: (body: { email: string; year: number; make: string; model: string; vin?: string | null }) =>
+  subscribe: (body: { email: string; year: number; make: string; model: string; vin?: string | null; plan_path?: string }) =>
     call<{ subscribed: boolean; open_recalls: number; email_sent: boolean; email_error: string | null }>(
       "/alerts/subscribe",
       json(body),
@@ -164,3 +164,19 @@ export const usd = (n: number, digits = 0) =>
 
 // Where a customer-built PlanInput is handed from /start to /plan.
 export const INPUT_KEY = "carplan:input";
+
+// Packs a plan's car, contract and miles into a link-safe string, so an email can bring the driver
+// back to their plan. Income and bills are left out on purpose: links get forwarded.
+export function packPlan(input: PlanInput): string {
+  const { path, name, vehicle, contract, miles_per_year } = input;
+  const json = JSON.stringify({ path, name, vehicle, contract, miles_per_year });
+  const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(json)));
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function unpackPlan(packed: string): PlanInput {
+  const b64 = packed.replace(/-/g, "+").replace(/_/g, "/");
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const p = JSON.parse(new TextDecoder().decode(bytes));
+  return { ...p, finances: { monthly_income: 0, monthly_bills: 0, source: "manual" } };
+}

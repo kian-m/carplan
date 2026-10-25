@@ -4,6 +4,7 @@ emails go out through Resend. POST /api/alerts/check is meant for a scheduler (C
 
 import html
 import json
+import re
 import secrets
 
 from app.config import get_settings
@@ -21,19 +22,31 @@ CREATE TABLE IF NOT EXISTS alert_subscriptions (
     known_recalls JSONB NOT NULL DEFAULT '[]',
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (email, year, make, model)
-)
+);
+ALTER TABLE alert_subscriptions ADD COLUMN IF NOT EXISTS plan_path TEXT;
 """
+
+# The email button links back to the driver's own plan: a sample driver, or the car and contract
+# packed into the link (never income or bills). Anything else falls back to the home page.
+PLAN_PATH = re.compile(r"^/plan\?(driver=[a-z]{1,20}|p=[A-Za-z0-9_-]{1,4000})$")
+
+
+def plan_link(plan_path: str | None) -> str:
+    app = get_settings().public_app_url.rstrip("/")
+    return app + plan_path if plan_path and PLAN_PATH.match(plan_path) else app
 
 
 async def init() -> None:
-    await tiger.query(SCHEMA)
+    for stmt in SCHEMA.split(";"):
+        if stmt.strip():
+            await tiger.query(stmt)
 
 
 def _recall_ids(recalls: list[dict]) -> list[str]:
     return sorted({r.get("NHTSACampaignNumber") for r in recalls if r.get("NHTSACampaignNumber")})
 
 
-def _email(car: str, recalls: list[dict], token: str, welcome: bool) -> tuple[str, str]:
+def _email(car: str, recalls: list[dict], token: str, welcome: bool, plan_path: str | None = None) -> tuple[str, str]:
     app = get_settings().public_app_url.rstrip("/")
     unsubscribe = f"{app}/api/alerts/unsubscribe?token={token}"
     if recalls:
@@ -43,7 +56,7 @@ def _email(car: str, recalls: list[dict], token: str, welcome: bool) -> tuple[st
             for r in recalls[:5]
         )
         body = f"<p>There {'are' if len(recalls) != 1 else 'is'} {len(recalls)} open safety recall{'s' if len(recalls) != 1 else ''} for your {html.escape(car)}:</p><ul>{items}</ul>" \
-               "<p>Recall repairs are free at any dealer for your brand.</p>"
+               "<p>Recall repairs are free at authorized dealers for your brand.</p>"
     else:
         body = f"<p>Good news: there are no open safety recalls for your {html.escape(car)} right now.</p>"
     intro = (f"<p>You're signed up for free recall alerts for your {html.escape(car)}. We'll email you if there's "
@@ -54,31 +67,33 @@ def _email(car: str, recalls: list[dict], token: str, welcome: bool) -> tuple[st
         "<div style=\"font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:560px;color:#000\">"
         "<div style='border-top:4px solid #EB0A1E;padding-top:16px'><h2 style='margin:0 0 12px'>CarPlan</h2></div>"
         f"{intro}{body}"
-        f"<p><a href='{app}' style='background:#EB0A1E;color:#fff;padding:12px 20px;border-radius:60px;"
-        "text-decoration:none;display:inline-block'>See your car's next move</a></p>"
+        f"<p><a href='{html.escape(plan_link(plan_path))}' style='background:#EB0A1E;color:#fff;padding:12px 20px;border-radius:60px;"
+        "text-decoration:none;display:inline-block'>See your plan</a></p>"
         f"<p style='color:#58595B;font-size:12px'>You're receiving this because you turned on recall alerts at CarPlan. "
         f"<a href='{unsubscribe}' style='color:#58595B'>Unsubscribe</a></p></div>"
     )
     return subject, page
 
 
-async def subscribe(email: str, year: int, make: str, model: str, vin: str | None) -> dict:
+async def subscribe(email: str, year: int, make: str, model: str, vin: str | None, plan_path: str | None = None) -> dict:
     await init()
     recalls = await nhtsa.recalls(make, model, year)
     token = secrets.token_urlsafe(24)
+    if plan_path and not PLAN_PATH.match(plan_path):
+        plan_path = None
     rows = await tiger.query(
-        """INSERT INTO alert_subscriptions (email, year, make, model, vin, token, known_recalls)
-           VALUES (%s, %s, %s, %s, %s, %s, %s)
-           ON CONFLICT (email, year, make, model) DO UPDATE SET vin = EXCLUDED.vin
+        """INSERT INTO alert_subscriptions (email, year, make, model, vin, token, known_recalls, plan_path)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+           ON CONFLICT (email, year, make, model) DO UPDATE SET vin = EXCLUDED.vin, plan_path = EXCLUDED.plan_path
            RETURNING token""",
-        (email.strip().lower(), year, make, model, vin, token, json.dumps(_recall_ids(recalls))),
+        (email.strip().lower(), year, make, model, vin, token, json.dumps(_recall_ids(recalls)), plan_path),
     )
     token = rows[0]["token"]
     car = f"{year} {make.title()} {model}"
     sent, error = False, None
     if resend.configured():
         try:
-            subject, page = _email(car, recalls, token, welcome=True)
+            subject, page = _email(car, recalls, token, welcome=True, plan_path=plan_path)
             await resend.send(email, subject, page)
             sent = True
         except Exception as e:  # subscription is saved either way
@@ -102,7 +117,8 @@ async def check() -> dict:
         ids = _recall_ids(recalls)
         new = [r for r in recalls if r.get("NHTSACampaignNumber") not in set(s["known_recalls"])]
         if new and resend.configured():
-            subject, page = _email(f"{s['year']} {s['make'].title()} {s['model']}", new, s["token"], welcome=False)
+            subject, page = _email(f"{s['year']} {s['make'].title()} {s['model']}", new, s["token"], welcome=False,
+                                   plan_path=s.get("plan_path"))
             await resend.send(s["email"], subject, page)
             notified += 1
         await tiger.query("UPDATE alert_subscriptions SET known_recalls = %s WHERE id = %s", (json.dumps(ids), s["id"]))

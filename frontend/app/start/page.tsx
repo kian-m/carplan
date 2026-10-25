@@ -294,8 +294,8 @@ function StartPage() {
           <span className="font-semibold">{fileName ?? "Choose a file or take a photo"}</span>
           <span className="mt-1 text-xs text-tgray">{fileName ? "Choose a different file" : "PDF, JPG or PNG up to 15 MB"}</span>
           <span className="mt-3 max-w-md text-xs text-tgray">
-            We only read your car and payment terms. Your file isn&rsquo;t saved. Feel free to cover your name, address
-            and account numbers before you upload.
+            Google&rsquo;s Gemini reads it for your car and payment terms only. We don&rsquo;t save your file. Feel free to
+            cover your name, address and account numbers before you upload.
           </span>
           <input
             type="file"
