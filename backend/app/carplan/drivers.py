@@ -95,6 +95,24 @@ DRIVERS: dict[str, dict] = {
                   ("Spectrum Internet", 65), ("GEICO", 140), ("Austin Community College", 325),
                   ("Hill Country Credit Union", 215)],
     },
+    # A high-rate TFS loan on a high-mileage car, upside down: a Certified Used hybrid with a lower rate
+    # comes out cheapest, and the negative equity rolled into that loan is why GAP comes first.
+    "bob": {
+        "first": "Bob", "last": "Ross",
+        "tagline": "Car loan at 14.9%, owes more than it's worth",
+        "input": PlanInput(
+            path="toyota", name="Bob",
+            vehicle=Vehicle(year=2021, make="Toyota", model="Corolla", trim="LE", odometer=90000,
+                            msrp=20475),  # 2021 Corolla LE sedan, before destination
+            contract=Contract(kind="loan", monthly_payment=548.36, term_months=84, months_elapsed=24,
+                              apr=14.9, amount_financed=28500, lender="TFS"),
+            finances=Finances(monthly_income=6000, monthly_bills=2400, checking_balance=3100),
+            miles_per_year=20000,
+        ),
+        "income": 6000, "checking": 3100,
+        "bills": [("Lakeside Apartments", 1550), ("Austin Energy", 170), ("AT&T", 90), ("Google Fiber", 70),
+                  ("Blick Art Materials", 120), ("Discover Card", 400), ("Toyota Financial Services", 548.36)],
+    },
 }
 
 CAR_LENDERS = ("toyota financial", "honda finance", "hill country credit union")

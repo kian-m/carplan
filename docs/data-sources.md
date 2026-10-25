@@ -60,6 +60,6 @@ A cheat sheet for judging Q&A. **Live** means pulled from a real data source for
 ## How we checked it
 
 - **Contract reading:** 4 sample contracts as PDFs and phone photos, read 24 to 48 times per model. gemini-3.5-flash scored 100% of fields with 0 personal data returned (`backend/evals`).
-- **End to end:** 27 browser tests cover every path, run against carplan.tech (`e2e/`).
+- **End to end:** 35 tests cover every path, run against carplan.tech (`e2e/`).
 - **Toyota claims:** every product description and policy (warranty, ToyotaCare, disposition fee waiver, Certified Used inspection, loan terms) was checked against toyotafinancial.com or toyota.com.
 - **Reading level:** all driver-facing text graded with Flesch-Kincaid: grade 7.9 before, grade 4.5 after.

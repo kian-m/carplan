@@ -33,7 +33,7 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
     expect(page.get_by_role("heading", level=1)).to_contain_text("next move")
     expect(page.get_by_role("link", name=re.compile("I drive a Toyota"))).to_have_attribute("href", "/start?path=toyota")
     expect(page.get_by_role("link", name=re.compile("I drive another brand"))).to_have_attribute("href", "/start?path=other")
-    for name in ("Maria Lopez", "Sam Patel", "Jordan Kim", "Taylor Nguyen", "Alex Rivera"):
+    for name in ("Maria Lopez", "Sam Patel", "Jordan Kim", "Taylor Nguyen", "Alex Rivera", "Bob Ross"):
         expect(page.get_by_text(name)).to_be_visible()
 
 
@@ -43,7 +43,8 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
     ("maria", "Buy out your lease", 3),
     ("sam", "Keep your car", 2),  # no Certified Used: it would be the same 2024 Corolla Hybrid he has
     ("jordan", "Buy out your lease", 3),  # his CR-V is worth more than the buyout, so keeping it is cheapest
-    ("alex", "Keep your car", 3),  # an old Civic that's almost paid off: keeping it is cheapest
+    ("alex", "Keep your car", 3),
+    ("bob", "Certified Used Corolla Hybrid", 3),  # a high-rate loan makes a lower-rate used hybrid cheapest  # an old Civic that's almost paid off: keeping it is cheapest
 ])
 def test_each_sample_driver_gets_the_right_recommendation(page: Page, base_url, driver, best, count):
     open_plan(page, base_url, driver)
@@ -62,6 +63,12 @@ def test_underwater_loan_leads_with_gap(page: Page, base_url):
     # the main button says where it goes
     expect(page.get_by_role("link", name="Explore GAP coverage")).to_have_attribute("href", GAP_URL)
     expect(page.get_by_text(re.compile(r"^\$[\d,]+ more than it.s worth$"))).to_be_visible()
+
+
+def test_negative_equity_rolled_into_a_used_toyota_leads_with_gap(page: Page, base_url):
+    open_plan(page, base_url, "bob")
+    expect(best_card(page)).to_contain_text("Certified Used Corolla Hybrid")
+    expect(page.get_by_role("link", name="Explore GAP coverage").first).to_have_attribute("href", GAP_URL)
 
 
 def test_driver_with_equity_gets_no_gap_warning(page: Page, base_url):

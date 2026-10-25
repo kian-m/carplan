@@ -320,7 +320,8 @@ def build_plan(
         principal = new_price * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
         pm = payment(principal, A["new_apr"], A["finance_term_months"])
         bal_end = balance_after(principal, A["new_apr"], A["finance_term_months"], H)
-        value_end = new_price * (1 - A["new_car_first_year_depreciation"]) * (1 - A["depreciation_per_year"]) ** (years - 1)
+        # First-year drop, then the same yearly loss (with the high-mileage adjustment) as every other car
+        value_end = depreciate(new_price * (1 - A["new_car_first_year_depreciation"]), years - 1, mpy)
         options.append(option(
             "new_toyota", f"Get a new {target}", f"New {target}", pm,
             CostBreakdown(
@@ -377,7 +378,7 @@ def build_plan(
                    f"only pays what it's worth. GAP may cover the ${-equity:,.0f} difference.", "high")
     elif best.loan_to_value and best.loan_to_value > 1.0:
         rec("gap", "Your new loan would start out bigger than the car's value. If the car is totaled early on, "
-                   "GAP covers the difference.", "high")
+                   "GAP may cover the difference.", "high")
     # VSA: keeping a car that leaves the basic warranty during the plan
     if best.id in ("buy_out", "keep") and is_toyota and warranty_left is not None and warranty_left < H:
         when = "is over" if warranty_left == 0 else f"ends in about {warranty_left} months"
