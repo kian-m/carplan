@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Alert, Bell, Car, Check, Dollar, Gauge, Shield, Tag, Umbrella, Wrench } from "@/app/icons";
 import {
   carplan,
   INPUT_KEY,
@@ -12,6 +13,7 @@ import {
   type Option,
   type PlanInput,
   type PlanResponse,
+  type TfsProduct,
   type TfsRecommendation,
 } from "@/lib/carplan";
 
@@ -49,6 +51,15 @@ function situationLine(input: PlanInput, months: number) {
   return "Paid off";
 }
 
+// Parts of the all-in cost, in the order and colors used by every cost bar.
+const PARTS = [
+  { key: "payments", label: "Payments", color: "#000000" },
+  { key: "fuel", label: "Gas", color: "#eb0a1e" },
+  { key: "maintenance", label: "Upkeep", color: "#58595b" },
+  { key: "insurance", label: "Insurance", color: "#b8b8b8" },
+  { key: "fees", label: "Fees", color: "#f29aa2" },
+] as const;
+
 // --- answer --------------------------------------------------------------
 
 function Answer({
@@ -65,61 +76,138 @@ function Answer({
   updating: boolean;
 }) {
   const best = data.plan.options.find((o) => o.id === data.plan.recommended)!;
+  const runnerUp = data.plan.options.filter((o) => o.id !== best.id).sort((a, b) => a.total_cost - b.total_cost)[0];
+  const saving = runnerUp ? runnerUp.total_cost - best.total_cost : 0;
+  const years = data.plan.horizon_months / 12;
   const v = input.vehicle;
   const cta = data.plan.next_step;
 
   return (
-    <section className="tcard mt-6 p-6 sm:p-8">
-      <p className="text-sm text-tgray">
-        {input.name ? `${input.name}'s ` : "Your "}
-        {v.year} {v.make} {v.model}
-        {v.trim ? ` ${v.trim}` : ""} · {situationLine(input, data.plan.situation.months_remaining)}
-      </p>
+    <section className="tcard mt-4 overflow-hidden !p-0">
+      <div className="grid lg:grid-cols-[1fr_300px]">
+        <div className="p-6 sm:p-8">
+          <p className="flex items-center gap-2 text-sm text-tgray">
+            <Car className="h-5 w-5 shrink-0" />
+            <span>
+              {input.name ? `${input.name}'s ` : "Your "}
+              {v.year} {v.make} {v.model}
+              {v.trim ? ` ${v.trim}` : ""} · {situationLine(input, data.plan.situation.months_remaining)}
+            </span>
+          </p>
 
-      {explanation ? (
-        <div className={updating ? "opacity-50 transition-opacity" : "transition-opacity"} aria-busy={updating}>
-          {updating && <p className="mt-2 text-xs font-semibold text-tred">Updating for your changes…</p>}
-          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{explanation.headline}</h1>
-          <p className="mt-3 text-lg">{explanation.summary}</p>
-          <ul className="mt-5 space-y-3">
-            {explanation.reasons.map((r) => (
-              <li key={r} className="flex gap-3">
-                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-tred" />
-                <span>{r}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <>
-          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{best.title}.</h1>
-          <div className="mt-4 space-y-3" aria-label="Writing your explanation">
-            <div className="h-4 w-4/5 animate-pulse rounded bg-tsurface" />
-            <div className="h-4 w-3/5 animate-pulse rounded bg-tsurface" />
-            <div className="h-4 w-2/3 animate-pulse rounded bg-tsurface" />
+          {explanation ? (
+            <div className={updating ? "opacity-50 transition-opacity" : "transition-opacity"} aria-busy={updating}>
+              {updating && <p className="mt-3 text-xs font-semibold text-tred">Updating for your changes…</p>}
+              <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-[40px]">{explanation.headline}</h1>
+              <p className="mt-3 text-lg text-tgray">{explanation.summary}</p>
+              <ul className="mt-6 grid gap-3 sm:grid-cols-3">
+                {explanation.reasons.map((r) => (
+                  <li key={r} className="flex gap-2.5 rounded-[3px] bg-tsurface p-3.5 text-sm leading-snug">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-tred" />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <>
+              <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-[40px]">{best.title}</h1>
+              <div className="mt-4 space-y-3" aria-label="Writing your explanation">
+                <div className="h-4 w-4/5 animate-pulse rounded bg-tsurface" />
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-20 animate-pulse rounded-[3px] bg-tsurface" />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {gap && (
+            <div className="mt-6 flex gap-3 rounded-[3px] border border-tred/30 bg-[#fdecee] p-4">
+              <Shield className="h-6 w-6 shrink-0 text-tred" />
+              <div>
+                <p className="font-semibold">Protect yourself with GAP</p>
+                <p className="mt-1 text-sm">{gap.reason}</p>
+                <a href={gap.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-tred underline">
+                  Learn about GAP
+                </a>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-7 flex flex-wrap gap-3">
+            <a href={cta.url} target="_blank" rel="noreferrer" className="btn-primary">
+              {cta.label}
+            </a>
+            <a href="#options" className="btn-secondary">
+              Compare all options
+            </a>
           </div>
-        </>
-      )}
-
-      {gap && (
-        <div className="mt-6 border-l-4 border-tred bg-tsurface p-4">
-          <p className="font-semibold">Protect yourself with GAP</p>
-          <p className="mt-1 text-sm">{gap.reason}</p>
-          <a href={gap.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-tred underline">
-            Learn about GAP
-          </a>
         </div>
-      )}
 
-      <div className="mt-7 flex flex-wrap gap-3">
-        <a href={cta.url} target="_blank" rel="noreferrer" className="btn-primary">
-          {cta.label}
-        </a>
-        <a href="#options" className="btn-secondary">
-          Compare all options
-        </a>
+        <aside className="flex flex-col justify-center gap-5 bg-black p-6 text-white sm:p-8">
+          <div>
+            <p className="text-sm text-white/70">All-in cost</p>
+            <p className="mt-1 text-5xl font-bold tabular-nums tracking-tight">
+              <Live value={Math.round(best.true_monthly_cost)}>{usd(best.true_monthly_cost)}</Live>
+            </p>
+            <p className="text-sm text-white/70">a month, everything included</p>
+          </div>
+          {saving > 0 && (
+            <div className="border-t border-white/20 pt-5">
+              <p className="text-3xl font-bold tabular-nums text-[#ff4d5e]">
+                <Live value={Math.round(saving)}>{usd(saving)}</Live>
+              </p>
+              <p className="text-sm text-white/70">saved over {years} years vs. your next best choice:</p>
+              <p className="text-sm font-semibold">{runnerUp.title}</p>
+            </div>
+          )}
+        </aside>
       </div>
     </section>
+  );
+}
+
+// --- where you stand -------------------------------------------------------
+
+function Standing({ data }: { data: PlanResponse }) {
+  const s = data.plan.situation;
+  const kind = data.input.contract.kind;
+  if (kind === "owned") return null;
+  const lease = kind === "lease";
+  const worth = Math.max(0, s.equity + s.payoff);
+  const max = Math.max(worth, s.payoff, 1);
+  const rows = [
+    { label: lease ? "Worth at lease end" : "What it's worth", value: worth, color: "bg-black" },
+    { label: lease ? "Your buyout price at lease end" : "What you owe today", value: s.payoff, color: "bg-[#b8b8b8]" },
+  ];
+  return (
+    <div className="rounded-[3px] border border-tline p-5 lg:col-span-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-semibold">Where you stand</h2>
+        <Live value={Math.round(s.equity)} className={s.equity >= 0 ? "font-semibold text-tgreen" : "font-semibold text-tred"}>
+          {s.equity >= 0 ? `${usd(s.equity)} in equity` : `${usd(-s.equity)} more than it's worth`}
+        </Live>
+      </div>
+      <div className="mt-4 space-y-3">
+        {rows.map((r) => (
+          <div key={r.label} className="grid items-center gap-1 sm:grid-cols-[13rem_1fr] sm:gap-3">
+            <span className="text-sm text-tgray">
+              {r.label}: <span className="font-semibold text-black tabular-nums">{usd(r.value)}</span>
+            </span>
+            <div className="h-3 rounded-full bg-tsurface">
+              <div className={`bar h-3 rounded-full ${r.color} transition-[width] duration-500`} style={{ width: `${(r.value / max) * 100}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-sm text-tgray">
+        {s.equity >= 0
+          ? "If you switch cars, that money goes toward your next one."
+          : "If you switch cars, this amount gets added to your new loan."}
+      </p>
+    </div>
   );
 }
 
@@ -145,11 +233,12 @@ function Adjusters({
   const sources = s.market_value_sources;
 
   return (
-    <section className="mt-6 grid gap-5 sm:grid-cols-2">
+    <section className="mt-6 grid gap-5 lg:grid-cols-2" aria-label="Adjust your numbers">
       <div className="rounded-[3px] border border-tline p-5">
-        <label htmlFor="value" className="text-sm text-tgray">
-          What your car is worth today
-        </label>
+        <div className="flex items-center gap-2 text-sm text-tgray">
+          <Tag className="h-5 w-5" />
+          <label htmlFor="value">What your car is worth today</label>
+        </div>
         <p className="mt-1 text-3xl font-bold tabular-nums">{usd(value)}</p>
         <input
           id="value"
@@ -161,6 +250,10 @@ function Adjusters({
           onChange={(e) => setValue(Number(e.target.value))}
           className="mt-3 w-full"
         />
+        <div className="flex justify-between text-xs text-tgray tabular-nums">
+          <span>{usd(min)}</span>
+          <span>{usd(max)}</span>
+        </div>
         <p className="mt-2 text-xs text-tgray">
           {s.market_value_method === "listings" || (s.market_value_method === "user" && sources.length)
             ? `Similar cars near Austin sell for ${usd(s.market_value_low)} to ${usd(s.market_value_high)} (from ${sources.length} websites). `
@@ -184,9 +277,10 @@ function Adjusters({
       </div>
 
       <div className="rounded-[3px] border border-tline p-5">
-        <label htmlFor="miles" className="text-sm text-tgray">
-          Miles you drive a year
-        </label>
+        <div className="flex items-center gap-2 text-sm text-tgray">
+          <Gauge className="h-5 w-5" />
+          <label htmlFor="miles">Miles you drive a year</label>
+        </div>
         <p className="mt-1 text-3xl font-bold tabular-nums">{miles.toLocaleString()}</p>
         <input
           id="miles"
@@ -198,32 +292,24 @@ function Adjusters({
           onChange={(e) => setMiles(Number(e.target.value))}
           className="mt-3 w-full"
         />
-        <p className="mt-2 text-xs text-tgray">
-          {lease && s.projected_excess_miles > 0
-            ? `At this rate you’ll go ${s.projected_excess_miles.toLocaleString()} miles over your lease limit. That’s ${usd(s.projected_excess_fee)} in fees if you return it.`
-            : "Based on your recent driving. Change it to see if your best move changes."}
-        </p>
+        <div className="flex justify-between text-xs text-tgray tabular-nums">
+          <span>3,000</span>
+          <span>30,000</span>
+        </div>
+        {lease && s.projected_excess_miles > 0 ? (
+          <p className="mt-2 flex gap-1.5 text-xs font-semibold text-tred">
+            <Alert className="h-4 w-4 shrink-0" />
+            <span>
+              At this rate you’ll go {s.projected_excess_miles.toLocaleString()} miles over your lease limit. That’s{" "}
+              {usd(s.projected_excess_fee)} in fees if you return it.
+            </span>
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-tgray">Based on your recent driving. Change it to see if your best move changes.</p>
+        )}
       </div>
 
-      <div className="rounded-[3px] bg-tsurface p-5 sm:col-span-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p>
-            {lease ? "Your buyout price at lease end" : "What you owe today"}:{" "}
-            <span className="font-semibold tabular-nums">{usd(s.payoff)}</span>
-          </p>
-          <Live value={Math.round(s.equity)} className={s.equity >= 0 ? "font-semibold text-tgreen" : "font-semibold text-tred"}>
-            {s.equity >= 0
-              ? `${usd(s.equity)} in equity`
-              : `${usd(-s.equity)} more than it's worth`}
-          </Live>
-        </div>
-        {s.equity >= 1 && data.input.contract.kind !== "owned" && (
-          <p className="mt-1 text-sm text-tgray">If you switch cars, that money goes toward your next one.</p>
-        )}
-        {s.equity < 0 && (
-          <p className="mt-1 text-sm text-tgray">If you switch cars, this amount gets added to your new loan.</p>
-        )}
-      </div>
+      <Standing data={data} />
     </section>
   );
 }
@@ -311,7 +397,43 @@ function Assumptions({ data }: { data: PlanResponse }) {
 
 // --- options -------------------------------------------------------------
 
-function OptionCard({ o, best, years }: { o: Option; best: boolean; years: number }) {
+function Ranking({ options, best }: { options: Option[]; best: string }) {
+  const sorted = [...options].sort((a, b) => a.true_monthly_cost - b.true_monthly_cost);
+  const max = Math.max(...sorted.map((o) => o.true_monthly_cost), 1);
+  return (
+    <div className="mt-6 space-y-3 rounded-[3px] bg-tsurface p-5" aria-label="All-in cost per month, lowest first">
+      {sorted.map((o) => (
+        <div key={o.id} className="grid grid-cols-[8rem_1fr_4.5rem] items-center gap-3 sm:grid-cols-[13rem_1fr_5rem]">
+          <span className={`text-sm leading-tight ${o.id === best ? "font-semibold" : "text-tgray"}`}>{o.title}</span>
+          <div className="h-6">
+            <div
+              className={`bar h-6 rounded-[3px] transition-[width] duration-500 ${o.id === best ? "bg-tred" : "bg-[#b8b8b8]"}`}
+              style={{ width: `${Math.max(4, (o.true_monthly_cost / max) * 100)}%` }}
+            />
+          </div>
+          <span className={`text-right text-sm tabular-nums ${o.id === best ? "font-bold" : ""}`}>{usd(o.true_monthly_cost)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CostBar({ o, max }: { o: Option; max: number }) {
+  const b = o.breakdown as unknown as Record<string, number>;
+  return (
+    <div className="mt-4">
+      <div className="flex h-2.5 overflow-hidden rounded-full bg-tsurface" style={{ width: `${Math.max(20, (o.total_cost / max) * 100)}%` }}>
+        {PARTS.map((p) => {
+          const gross = PARTS.reduce((t, q) => t + Math.max(0, b[q.key]), 0) || 1;
+          const w = (Math.max(0, b[p.key]) / gross) * 100;
+          return w > 0 ? <div key={p.key} title={p.label} className="h-full transition-[width] duration-500" style={{ width: `${w}%`, background: p.color }} /> : null;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function OptionCard({ o, best, years, max }: { o: Option; best: boolean; years: number; max: number }) {
   const [open, setOpen] = useState(false);
   const b = o.breakdown;
   const rows: [string, number][] = [
@@ -327,7 +449,7 @@ function OptionCard({ o, best, years }: { o: Option; best: boolean; years: numbe
     <article
       className={
         best
-          ? "tcard relative flex flex-col"
+          ? "tcard relative flex flex-col ring-1 ring-tred"
           : "flex flex-col rounded-[3px] border border-tline bg-white p-5"
       }
     >
@@ -348,8 +470,12 @@ function OptionCard({ o, best, years }: { o: Option; best: boolean; years: numbe
           {usd(o.monthly_payment)}
         </Live>
       </p>
+      <CostBar o={o} max={max} />
       {!o.affordable && (
-        <p className="mt-2 text-sm font-semibold text-tred">Above the 20% of income we recommend for car costs</p>
+        <p className="mt-3 flex gap-1.5 text-sm font-semibold text-tred">
+          <Alert className="h-4 w-4 shrink-0" />
+          Above the 20% of income we recommend for car costs
+        </p>
       )}
       <ul className="mt-3 space-y-1.5 text-sm text-tgray">
         {o.notes.map((n) => (
@@ -381,32 +507,94 @@ function OptionCard({ o, best, years }: { o: Option; best: boolean; years: numbe
 
 // --- TFS products ----------------------------------------------------------
 
+function productIcon(r: TfsRecommendation) {
+  if (["vsa", "auto_care", "toyotacare_plus"].includes(r.product)) return Wrench;
+  if (r.category === "Protection") return Shield;
+  if (r.category === "Rebates") return Tag;
+  if (r.category === "Insurance") return Umbrella;
+  if (r.product === "certified_used" || r.product === "turn_in_new") return Car;
+  return Dollar;
+}
+
 function Products({ recs, disclosure }: { recs: TfsRecommendation[]; disclosure: string }) {
   if (!recs.length) return null;
   return (
-    <section className="mt-12">
+    <section className="mt-14">
       <h2 className="text-2xl font-bold tracking-tight">Toyota Financial Services can help</h2>
-      <ul className="mt-5 divide-y divide-tline border-y border-tline">
-        {recs.map((r) => (
-          <li key={r.product} className="flex flex-col gap-1 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-            <div>
-              <p className="font-semibold">
-                {r.name}
+      <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {recs.map((r) => {
+          const Icon = productIcon(r);
+          return (
+            <li key={r.product} className="flex flex-col rounded-[3px] border border-tline p-5">
+              <div className="flex items-start justify-between gap-2">
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#fdecee] text-tred">
+                  <Icon className="h-5 w-5" />
+                </span>
                 {r.priority === "high" && (
-                  <span className="ml-2 rounded-full bg-tred px-2 py-0.5 align-middle text-xs font-semibold text-white">
-                    Recommended
-                  </span>
+                  <span className="rounded-full bg-tred px-2 py-0.5 text-xs font-semibold text-white">Recommended</span>
                 )}
-              </p>
-              <p className="mt-1 text-sm text-tgray">{r.reason}</p>
-            </div>
-            <a href={r.url} target="_blank" rel="noreferrer" className="shrink-0 text-sm font-semibold text-tred underline">
-              Learn more
-            </a>
-          </li>
-        ))}
+              </div>
+              <p className="mt-3 font-semibold">{r.name}</p>
+              <p className="mt-1 flex-1 text-sm text-tgray">{r.reason}</p>
+              <a href={r.url} target="_blank" rel="noreferrer" className="mt-3 text-sm font-semibold text-tred underline">
+                Learn more
+              </a>
+            </li>
+          );
+        })}
       </ul>
       <p className="mt-3 text-xs text-tgray">{disclosure}</p>
+    </section>
+  );
+}
+
+// Every TFS service, grouped like toyotafinancial.com, with the ones that fit this driver marked.
+function Catalog({ plan }: { plan: PlanResponse["plan"] }) {
+  const [products, setProducts] = useState<Record<string, TfsProduct>>({});
+  useEffect(() => {
+    carplan.products().then(setProducts).catch(() => setProducts({}));
+  }, []);
+  const picked = new Set([
+    ...plan.recommendations.map((r) => r.product),
+    ...(plan.options.find((o) => o.id === plan.recommended)?.tfs_products ?? []),
+  ]);
+  const groups: Record<string, [string, TfsProduct][]> = {};
+  for (const [key, p] of Object.entries(products)) (groups[p.category] ??= []).push([key, p]);
+  if (!Object.keys(groups).length) return null;
+  return (
+    <section className="mt-14" aria-labelledby="catalog">
+      <h2 id="catalog" className="text-2xl font-bold tracking-tight">
+        Everything Toyota Financial Services offers
+      </h2>
+      <p className="mt-1 text-tgray">
+        <span className="font-semibold text-black">{[...picked].filter((k) => products[k]).length}</span> of{" "}
+        {Object.keys(products).length} fit your situation. They&rsquo;re marked below.
+      </p>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {Object.entries(groups).map(([category, items]) => (
+          <div key={category}>
+            <h3 className="border-b-2 border-black pb-2 text-sm font-semibold">{category}</h3>
+            <ul className="divide-y divide-tline">
+              {items.map(([key, p]) => (
+                <li key={key}>
+                  <a href={p.url} target="_blank" rel="noreferrer" className="group flex items-start justify-between gap-3 py-3">
+                    <span>
+                      <span className="block text-sm font-semibold group-hover:underline">{p.name}</span>
+                      <span className="block text-xs text-tgray">{p.description}</span>
+                    </span>
+                    {picked.has(key) && (
+                      <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#fdecee] px-2 py-0.5 text-xs font-semibold text-tred">
+                        <Check className="h-3 w-3" />
+                        For you
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -437,35 +625,42 @@ function RecallAlerts({ input }: { input: PlanInput }) {
   }
 
   return (
-    <section className="tcard mt-12">
-      <h2 className="text-xl font-semibold">Get free recall alerts for your {car}</h2>
-      <p className="mt-1 text-tgray">
-        We&rsquo;ll email you if there&rsquo;s a safety recall on your car. It&rsquo;s free, and you can unsubscribe anytime.
-      </p>
-      {state === "done" ? (
-        <p className="mt-4 font-semibold" role="status">
-          Alerts are on. {msg}
-        </p>
-      ) : (
-        <form onSubmit={submit} className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <label htmlFor="email" className="sr-only">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@email.com"
-            className="min-w-0 flex-1 rounded-full border border-tline px-5 py-3"
-          />
-          <button className="btn-primary" disabled={state === "sending"}>
-            {state === "sending" ? "Turning on alerts" : "Turn on alerts"}
-          </button>
-        </form>
-      )}
-      {state === "error" && <p className="mt-2 text-sm text-tred">{msg}</p>}
+    <section className="mt-14 grid gap-5 rounded-[3px] bg-black p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.2fr] lg:items-center">
+      <div className="flex gap-4">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-tred">
+          <Bell className="h-6 w-6" />
+        </span>
+        <div>
+          <h2 className="text-xl font-semibold">Get free recall alerts for your {car}</h2>
+          <p className="mt-1 text-sm text-white/70">We&rsquo;ll email you if there&rsquo;s a safety recall. Unsubscribe anytime.</p>
+        </div>
+      </div>
+      <div>
+        {state === "done" ? (
+          <p className="font-semibold" role="status">
+            Alerts are on. {msg}
+          </p>
+        ) : (
+          <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row">
+            <label htmlFor="email" className="sr-only">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              className="min-w-0 flex-1 rounded-full border border-white/30 bg-white px-5 py-3 text-black"
+            />
+            <button className="btn-primary" disabled={state === "sending"}>
+              {state === "sending" ? "Turning on alerts" : "Turn on alerts"}
+            </button>
+          </form>
+        )}
+        {state === "error" && <p className="mt-2 text-sm text-[#ff8a95]">{msg}</p>}
+      </div>
     </section>
   );
 }
@@ -485,14 +680,22 @@ function Mileage({ driver, input }: { driver: string; input: PlanInput }) {
   const yTicks: number[] = [];
   for (let n = Math.floor(lo / step) * step; n < hi + step; n += step) yTicks.push(n);
   return (
-    <section className="mt-12">
-      <h2 className="text-2xl font-bold tracking-tight">Your driving this year</h2>
-      <p className="mt-1 text-tgray">
-        About {input.miles_per_year.toLocaleString()} miles a year, from your odometer history.
-      </p>
+    <section className="mt-14 rounded-[3px] border border-tline p-5 sm:p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-2xl font-bold tracking-tight">Your driving this year</h2>
+        <p className="text-tgray">
+          <span className="font-semibold text-black">{input.miles_per_year.toLocaleString()}</span> miles a year, from your odometer
+        </p>
+      </div>
       <div className="mt-4 h-56">
         <ResponsiveContainer>
-          <LineChart data={rows} margin={{ left: 8, right: 8 }}>
+          <AreaChart data={rows} margin={{ left: 8, right: 8 }}>
+            <defs>
+              <linearGradient id="odo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#eb0a1e" stopOpacity={0.18} />
+                <stop offset="100%" stopColor="#eb0a1e" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <XAxis
               dataKey="week"
               ticks={months.map((r) => r.week)}
@@ -511,8 +714,8 @@ function Mileage({ driver, input }: { driver: string; input: PlanInput }) {
               labelFormatter={(t) => new Date(t).toLocaleDateString()}
               formatter={(n: number) => [`${Math.round(n).toLocaleString()} mi`, "Odometer"]}
             />
-            <Line type="monotone" dataKey="odometer" stroke="#eb0a1e" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-          </LineChart>
+            <Area type="monotone" dataKey="odometer" stroke="#eb0a1e" strokeWidth={2.5} fill="url(#odo)" isAnimationActive={false} />
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </section>
@@ -528,27 +731,27 @@ function PlanSkeleton() {
       <p className="mt-6 text-sm text-tgray" role="status">
         Comparing your options…
       </p>
-      <section className="tcard mt-4 space-y-4 p-6 sm:p-8">
-        <div className={`h-9 w-3/4 ${bar}`} />
-        <div className={`h-4 w-4/5 ${bar}`} />
-        <div className={`h-4 w-3/5 ${bar}`} />
-        <div className={`h-11 w-56 rounded-full ${bar}`} />
+      <section className="tcard mt-4 grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_260px]">
+        <div className="space-y-4">
+          <div className={`h-9 w-3/4 ${bar}`} />
+          <div className={`h-4 w-4/5 ${bar}`} />
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className={`h-20 ${bar}`} />
+            ))}
+          </div>
+          <div className={`h-11 w-56 rounded-full ${bar}`} />
+        </div>
+        <div className={`h-48 ${bar}`} />
       </section>
-      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
         {[0, 1].map((i) => (
           <div key={i} className="h-36 rounded-[3px] border border-tline p-5">
             <div className={`h-8 w-1/2 ${bar}`} />
           </div>
         ))}
       </div>
-      <div className="mt-12 grid gap-5 sm:grid-cols-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-48 rounded-[3px] border border-tline p-5">
-            <div className={`h-5 w-2/3 ${bar}`} />
-            <div className={`mt-5 h-8 w-1/3 ${bar}`} />
-          </div>
-        ))}
-      </div>
+      <div className={`mt-12 h-40 ${bar}`} />
     </div>
   );
 }
@@ -658,6 +861,7 @@ function PlanPage() {
 
   const years = data.plan.horizon_months / 12;
   const options = [...data.plan.options].sort((a, b) => (a.id === data.plan.recommended ? -1 : b.id === data.plan.recommended ? 1 : a.total_cost - b.total_cost));
+  const maxTotal = Math.max(...options.map((o) => o.total_cost), 1);
   const gap = data.plan.recommendations.find((r) => r.product === "gap" && r.priority === "high");
   const others = data.plan.recommendations.filter((r) => r !== gap);
 
@@ -684,20 +888,29 @@ function PlanPage() {
       <Adjusters data={data} value={value} setValue={setValue} miles={miles} setMiles={setMiles} />
       {input.path === "other" && data.plan.toyota_equivalent && <Compare data={data} />}
 
-      <section id="options" className="mt-12 scroll-mt-20">
+      <section id="options" className="mt-14 scroll-mt-20">
         <h2 className="text-2xl font-bold tracking-tight">Every option, side by side</h2>
         <p className="mt-1 text-tgray">
-          The all-in cost per month adds up payments, gas, upkeep, insurance and fees for {years} years. Then it
-          subtracts what the car is still worth to you at the end.
+          All-in cost a month over {years} years: payments, gas, upkeep, insurance and fees, minus what the car is still worth at the end.
         </p>
-        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+        <Ranking options={options} best={data.plan.recommended} />
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-tgray">
+          {PARTS.map((p) => (
+            <span key={p.key} className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: p.color }} />
+              {p.label}
+            </span>
+          ))}
+        </div>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2">
           {options.map((o) => (
-            <OptionCard key={o.id} o={o} best={o.id === data.plan.recommended} years={years} />
+            <OptionCard key={o.id} o={o} best={o.id === data.plan.recommended} years={years} max={maxTotal} />
           ))}
         </div>
       </section>
 
       <Products recs={others} disclosure={data.plan.disclosure} />
+      <Catalog plan={data.plan} />
       {driver && <Mileage driver={driver} input={data.input} />}
       <RecallAlerts input={input} />
 

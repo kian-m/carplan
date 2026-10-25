@@ -1,16 +1,52 @@
 """What is the customer's car worth? Real listings via SerpApi, with a labeled fallback."""
 
+import json
 import re
 import statistics
 import time
 from datetime import date
 
 from app.carplan.models import Vehicle
-from app.integrations import serpapi
+from app.integrations import serpapi, tiger
 
 PRICE = re.compile(r"\$\s?(\d{1,3}(?:,\d{3})+|\d{4,6})")
 _cache: dict[str, tuple[float, dict]] = {}  # SerpApi searches are metered; reuse results per vehicle
 RETRY_AFTER = 600  # seconds before retrying a search that found too few listings
+
+# Search results vary from run to run. The last search that found real listings is saved, so a thin
+# search later (or a new server) reuses real prices instead of dropping to the formula estimate.
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS market_values (
+    key        TEXT PRIMARY KEY,
+    result     JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+"""
+
+
+async def _save(key: str, result: dict) -> None:
+    if not tiger.configured():
+        return
+    try:
+        await tiger.query(SCHEMA)
+        await tiger.query(
+            "INSERT INTO market_values (key, result) VALUES (%s, %s) "
+            "ON CONFLICT (key) DO UPDATE SET result = EXCLUDED.result, updated_at = now()",
+            (key, json.dumps(result)),
+        )
+    except Exception as e:
+        print(f"market: could not save listings ({type(e).__name__})")
+
+
+async def _last_good(key: str) -> dict | None:
+    if not tiger.configured():
+        return None
+    try:
+        await tiger.query(SCHEMA)
+        rows = await tiger.query("SELECT result FROM market_values WHERE key = %s", (key,))
+        return rows[0]["result"] if rows else None
+    except Exception:
+        return None
 
 
 def fallback(v: Vehicle) -> dict:
@@ -36,7 +72,7 @@ async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin
     try:
         data = await serpapi.google(query, location=location, num=20, gl="us", hl="en")
     except Exception:
-        return base
+        data = {}
 
     prices: list[int] = []
     sources: list[dict] = []
@@ -50,7 +86,7 @@ async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin
             sources.append({"title": r.get("source") or r.get("title"), "url": r.get("link")})
 
     if len(prices) < 3:
-        result = base
+        result = await _last_good(key) or base
     else:
         prices.sort()
         q = statistics.quantiles(prices, n=4)
@@ -62,5 +98,6 @@ async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin
             "sources": sources[:6],
             "listing_count": len(prices),
         }
+        await _save(key, result)
     _cache[key] = (time.time(), result)
     return result

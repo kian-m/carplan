@@ -65,6 +65,8 @@ export type TfsRecommendation = {
   priority: "high" | "medium" | "low";
 };
 
+export type TfsProduct = { name: string; category: string; description: string; url: string };
+
 export type Plan = {
   horizon_months: number;
   situation: {
@@ -140,6 +142,7 @@ export const carplan = {
   driver: (id: string) => call<PlanInput>(`/drivers/${id}`),
   mileage: (id: string) => call<{ week: string; odometer: number }[]>(`/drivers/${id}/mileage`),
   plan: (input: PlanInput) => call<PlanResponse>("/plan", json(input)),
+  products: () => call<Record<string, TfsProduct>>("/tfs/products"),
   explain: (input: PlanInput) => call<Explanation>("/plan/explain", json(input)),
   decodeVin: (vin: string) =>
     call<{ year?: string; make?: string; model?: string; trim?: string; valid: boolean; error: string | null }>(

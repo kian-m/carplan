@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-dvh">
         <header className="sticky top-0 z-20 border-b border-tline bg-white">
-          <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
+          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
             <Link href="/" className="flex items-baseline gap-2">
               <span className="text-xl font-bold tracking-tight">
                 Car<span className="text-tred">Plan</span>
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </a>
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 pb-24">{children}</main>
+        <main className="mx-auto max-w-5xl px-4 pb-24">{children}</main>
       </body>
     </html>
   );

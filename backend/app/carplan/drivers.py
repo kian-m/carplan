@@ -61,6 +61,24 @@ DRIVERS: dict[str, dict] = {
         "bills": [("The Domain Apartments", 1600), ("Austin Energy", 140), ("AT&T", 75),
                   ("Life Time Fitness", 45), ("Mohela Student Loan", 310), ("American Honda Finance", 429)],
     },
+    # Shows the widest set of TFS services: an underwater lease buyout for a high-mileage driver
+    # who just graduated from ROTC (GAP, service agreement, prepaid upkeep, tires, two rebates).
+    "taylor": {
+        "first": "Taylor", "last": "Nguyen",
+        "tagline": "Lease ending, ROTC grad, drives 20k a year",
+        "input": PlanInput(
+            path="toyota", name="Taylor", flags=["college", "military"],
+            vehicle=Vehicle(vin="4T1G11AK5PU123456", year=2023, make="Toyota", model="Camry", trim="SE",
+                            odometer=44000, msrp=29500),
+            contract=Contract(kind="lease", monthly_payment=399, term_months=36, months_elapsed=34,
+                              residual_value=21500, miles_allowed_per_year=12000, excess_mile_fee=0.15, lender="TFS"),
+            finances=Finances(monthly_income=5200, monthly_bills=1995, checking_balance=3900),
+            miles_per_year=20000,
+        ),
+        "income": 5200, "checking": 3900,
+        "bills": [("West Campus Apartments", 1500), ("Austin Energy", 150), ("Visible Wireless", 45),
+                  ("Gold's Gym", 60), ("Nelnet Student Loan", 240), ("Toyota Financial Services", 399)],
+    },
 }
 
 CAR_LENDERS = ("toyota financial", "honda finance")

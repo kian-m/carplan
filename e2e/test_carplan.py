@@ -31,7 +31,7 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
     expect(page.get_by_role("heading", level=1)).to_contain_text("next move")
     expect(page.get_by_role("link", name=re.compile("I drive a Toyota"))).to_have_attribute("href", "/start?path=toyota")
     expect(page.get_by_role("link", name=re.compile("I drive another brand"))).to_have_attribute("href", "/start?path=other")
-    for name in ("Maria Lopez", "Sam Patel", "Jordan Kim"):
+    for name in ("Maria Lopez", "Sam Patel", "Jordan Kim", "Taylor Nguyen"):
         expect(page.get_by_text(name)).to_be_visible()
 
 
@@ -101,6 +101,17 @@ def test_mileage_slider_changes_lease_overage(page: Page, base_url):
     for _ in range(10):
         page.keyboard.press("ArrowRight")
     expect(note).not_to_have_text(before)
+
+
+def test_taylor_shows_every_tfs_service_with_picks_marked(page: Page, base_url):
+    open_plan(page, base_url, "taylor")
+    catalog = page.locator("section[aria-labelledby=catalog]")
+    expect(catalog.get_by_role("link")).to_have_count(15)
+    marked = catalog.get_by_role("link").filter(has_text="For you")
+    expect(marked.first).to_be_visible()
+    assert marked.count() >= 5
+    for rebate in ("College Rebate Program", "Military Rebate"):
+        expect(catalog.get_by_role("link", name=re.compile(rebate)).filter(has_text="For you")).to_be_visible()
 
 
 def test_other_brand_sees_its_car_next_to_the_toyota(page: Page, base_url):
@@ -180,8 +191,14 @@ def test_missing_mileage_is_caught_before_submitting(page: Page, base_url):
     page.get_by_label("Year", exact=True).fill("2022")
     page.get_by_label("Model", exact=True).fill("RAV4")
     page.get_by_role("button", name="See my next move").click()
-    expect(page.get_by_role("status")).to_contain_text("mileage")
+    # the field is marked, explained, focused, and listed next to the button
+    mileage = page.get_by_label("Current mileage")
+    expect(mileage).to_have_attribute("aria-invalid", "true")
+    expect(mileage).to_be_focused()
+    expect(page.get_by_role("alert").filter(has_text="to see your next move")).to_contain_text("Add your current mileage")
     expect(page).to_have_url(re.compile(r"/start"))
+    mileage.fill("30000")
+    expect(mileage).not_to_have_attribute("aria-invalid", "true")
 
 
 def test_missing_income_is_caught_before_submitting(page: Page, base_url):
@@ -190,7 +207,8 @@ def test_missing_income_is_caught_before_submitting(page: Page, base_url):
     page.get_by_label("Model", exact=True).fill("RAV4")
     page.get_by_label("Current mileage").fill("30000")
     page.get_by_role("button", name="See my next move").click()
-    expect(page.get_by_role("status")).to_contain_text("income")
+    expect(page.get_by_role("alert").filter(has_text="to see your next move")).to_contain_text("monthly income")
+    expect(page.get_by_role("alert").filter(has_text="to see your next move")).to_contain_text("monthly payment")  # lease details are required too
     expect(page).to_have_url(re.compile(r"/start"))
 
 
