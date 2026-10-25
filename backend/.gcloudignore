@@ -1,0 +1,13 @@
+# Files gcloud must never upload to Cloud Build (keys live in Secret Manager)
+.gcloudignore
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.swp
+*.swo
+*~
+.venv/
+__pycache__/
+evals/results/

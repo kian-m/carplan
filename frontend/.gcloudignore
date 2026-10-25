@@ -1,0 +1,10 @@
+# Files gcloud must never upload to Cloud Build
+.gcloudignore
+.git
+.gitignore
+.env
+.env.*
+*.swp
+*.swo
+node_modules/
+.next/
