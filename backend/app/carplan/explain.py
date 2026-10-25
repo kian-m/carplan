@@ -66,7 +66,7 @@ def template(inp: PlanInput, plan: Plan) -> dict:
         reasons.append(plan.recommendations[0].reason)
     saving = f["savings_vs_runner_up"]
     return {
-        "headline": best["title"] + ".",
+        "headline": best["title"],
         "summary": f"It's the lowest total cost over {f['horizon_years']} years"
                    + (f", about ${saving:,} less than the next best option." if saving > 0 else "."),
         "reasons": reasons[:3],
@@ -75,7 +75,7 @@ def template(inp: PlanInput, plan: Plan) -> dict:
     }
 
 
-async def _hedged(call, hedges: tuple[float, ...] = (4, 9), timeout: float = 20):
+async def _hedged(call, hedges: tuple[float, ...] = (3, 7), timeout: float = 12):
     """Most Gemini calls finish in 2-4s but some stall for 15-25s. Start an identical backup call
     at each `hedges` mark while none has answered, and return the first success."""
     loop = asyncio.get_running_loop()
