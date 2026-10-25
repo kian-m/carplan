@@ -113,8 +113,9 @@ def test_every_tfs_service_is_listed_with_picks_marked(page: Page, base_url):
     marked = catalog.get_by_role("link").filter(has_text="For you")
     expect(marked.first).to_be_visible()
     assert marked.count() >= 4
-    expect(catalog.get_by_role("link", name=re.compile("Toyota Certified Used")).filter(has_text="For you")).to_be_visible()
-    # rebates only apply to new Toyotas, so they must not be marked next to a Certified Used pick
+    # Taylor buys out the lease, so the protection plans for keeping it are the picks
+    expect(catalog.get_by_role("link", name=re.compile("Vehicle Service Agreement")).filter(has_text="For you")).to_be_visible()
+    # rebates only apply to new Toyotas, so they must not be marked when the pick isn't a new one
     expect(catalog.get_by_role("link", name=re.compile("College Rebate")).filter(has_text="For you")).to_have_count(0)
 
 

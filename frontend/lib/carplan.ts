@@ -92,7 +92,7 @@ export type Plan = {
   disclosure: string;
 };
 
-export type PlanResponse = { input: PlanInput; plan: Plan; fuel: { current_annual: number; toyota_annual: number } };
+export type PlanResponse = { input: PlanInput; plan: Plan; fuel: { current_annual: number; toyota_annual: number; toyota_used_annual: number } };
 
 export type Explanation = {
   headline: string;

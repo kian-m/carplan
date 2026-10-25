@@ -326,9 +326,10 @@ function Compare({ data }: { data: PlanResponse }) {
   const v = data.input.vehicle;
   const target = data.plan.toyota_equivalent;
   const scale = data.input.miles_per_year / 15000;
-  const rows: [string, string, string][] = [
-    ["Gas a year", usd(data.fuel.current_annual * scale), usd(data.fuel.toyota_annual * scale)],
-    ["ToyotaCare free service", "Not included", "2 years (new)"],
+  const rows: [string, string, string, string][] = [
+    ["Gas a year", usd(data.fuel.current_annual * scale), usd(data.fuel.toyota_annual * scale),
+     usd(data.fuel.toyota_used_annual * scale)],
+    ["ToyotaCare free service", "Not included", "2 years", "Not included"],
   ];
   return (
     <section className="mt-6 rounded-[3px] border border-tline p-5">
@@ -340,15 +341,17 @@ function Compare({ data }: { data: PlanResponse }) {
           <tr className="text-left text-tgray">
             <th className="py-1 font-normal" />
             <th className="py-1 font-normal">Your {v.model}</th>
-            <th className="py-1 font-normal">{target}</th>
+            <th className="py-1 font-normal">New {target}</th>
+            <th className="py-1 font-normal">Used {target}</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(([k, mine, toyota]) => (
+          {rows.map(([k, mine, toyota, used]) => (
             <tr key={k} className="border-t border-tline">
               <th className="py-2 pr-3 text-left font-normal text-tgray">{k}</th>
               <td className="py-2 pr-3">{mine}</td>
-              <td className="py-2 font-semibold">{toyota}</td>
+              <td className="py-2 pr-3 font-semibold">{toyota}</td>
+              <td className="py-2 font-semibold">{used}</td>
             </tr>
           ))}
         </tbody>
@@ -372,8 +375,9 @@ function Assumptions({ data }: { data: PlanResponse }) {
     <ul className="list-disc space-y-2 pl-5">
       <li>Car value: {value}.</li>
       <li>
-        Gas: the EPA says your car costs {usd(data.fuel.current_annual)} a year to fuel, and the {data.plan.toyota_equivalent}{" "}
-        {usd(data.fuel.toyota_annual)}, at 15,000 miles. We adjusted for your {data.input.miles_per_year.toLocaleString()} miles.
+        Gas: the EPA says your car costs {usd(data.fuel.current_annual)} a year to fuel at 15,000 miles, a new{" "}
+        {data.plan.toyota_equivalent} {usd(data.fuel.toyota_annual)} and a used one{" "}
+        {usd(data.fuel.toyota_used_annual)}, for the exact trims on each card. We adjusted for your {data.input.miles_per_year.toLocaleString()} miles.
       </li>
       <li>
         Loan rates: {a.new_apr}% for a new Toyota, {a.certified_used_apr}% for Certified Used or a buyout. {a.rates_disclaimer}

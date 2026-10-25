@@ -20,11 +20,11 @@ DEFAULT_FUEL = 1900  # EPA-average annual fuel cost at 15k miles, used if a look
 _fuel_cache: dict[tuple, float] = {}
 
 
-async def _fuel(year: int, make: str, model: str) -> float:
-    key = (year, make.lower(), model.lower())
+async def _fuel(year: int, make: str, model: str, trim: str | None = None) -> float:
+    key = (year, make.lower(), model.lower(), (trim or "").lower())
     if key not in _fuel_cache:
         try:
-            v = await fueleconomy.lookup(year, make, model)
+            v = await fueleconomy.lookup(year, make, model, trim)
             _fuel_cache[key] = float(v["fuel_cost_annual"]) if v and v.get("fuel_cost_annual") else DEFAULT_FUEL
         except Exception:
             return DEFAULT_FUEL  # don't cache failures
@@ -36,7 +36,7 @@ async def _plan(inp: PlanInput) -> dict:
     v = inp.vehicle
     est, fuel_now, fuel_target = await asyncio.gather(
         market.estimate(v),
-        _fuel(v.year, v.make, v.model),
+        _fuel(v.year, v.make, v.model, v.trim),
         _fuel(min(date.today().year, 2025), "Toyota", target),  # EPA data lags the newest model year
     )
     if inp.market_value is not None:
@@ -45,7 +45,9 @@ async def _plan(inp: PlanInput) -> dict:
         value, low, high, method = est["value"], est["low"], est["high"], est["method"]
     plan = engine.build_plan(inp, value, low, high, method, est.get("sources", []), fuel_now, fuel_target)
     return {"input": inp.model_dump(), "plan": plan.model_dump(),
-            "fuel": {"current_annual": fuel_now, "toyota_annual": fuel_target}}
+            "fuel": {"current_annual": fuel_now,
+                     "toyota_annual": engine.COMPARISON_PRICES.get(target, {}).get("new_fuel", fuel_target),
+                     "toyota_used_annual": engine.COMPARISON_PRICES.get(target, {}).get("used_fuel", fuel_target)}}
 
 
 # --- sample drivers -------------------------------------------------------

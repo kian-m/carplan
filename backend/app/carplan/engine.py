@@ -56,19 +56,27 @@ TOYOTA_MSRP = {
 
 # Prices for the comparison Toyotas our sample drivers and sample contracts get, checked by hand
 # (Oct 25, 2026). New: toyota.com MSRP for the trim plus Toyota's delivery fee. Used: a typical asking
-# price for a 2-year-old one at Austin-area dealers. Other models use TOYOTA_MSRP and our estimate.
+# price for a 2-year-old one at Austin-area dealers. Fuel: EPA's yearly cost at 15,000 miles for that
+# exact trim (the 2024 Camry SE is gas; 2025 and later Camrys are hybrid). Other models use
+# TOYOTA_MSRP, our estimate and the EPA lookup.
 COMPARISON_PRICES = {
     "RAV4 Hybrid": {
         "new_trim": "2026 RAV4 XLE Premium", "new_msrp": 36100, "delivery": 1450,
+        "new_fuel": 1550,  # EPA 2026 RAV4 AWD XLE, 41 mpg
         "used_trim": "2024 RAV4 Hybrid XLE", "used": 32200,
+        "used_fuel": 1650,  # EPA 2024 RAV4 Hybrid AWD, 39 mpg
     },
     "Corolla Hybrid": {
         "new_trim": "2027 Corolla Hybrid LE", "new_msrp": 25175, "delivery": 1195,
+        "new_fuel": 1300,  # EPA 2027 Corolla Hybrid, 50 mpg
         "used_trim": "2024 Corolla Hybrid LE", "used": 23500,
+        "used_fuel": 1300,  # EPA 2024 Corolla Hybrid, 50 mpg
     },
     "Camry": {
         "new_trim": "2027 Camry SE", "new_msrp": 32200, "delivery": 1195,
+        "new_fuel": 1400,  # EPA 2026 Camry HEV FF SE/XLE/XSE, 46 mpg (no 2027 EPA figures yet)
         "used_trim": "2024 Camry SE", "used": 26200,
+        "used_fuel": 2000,  # EPA 2024 Camry LE/SE, 2.5L gas, 32 mpg
     },
 }
 
@@ -176,6 +184,8 @@ def build_plan(
     target_msrp = TOYOTA_MSRP.get(target, 33000)
     # What dealers near Austin actually ask for a new one, when we have enough listings; else the starting MSRP.
     prices = COMPARISON_PRICES.get(target)
+    fuel_new = prices["new_fuel"] if prices else fuel_target
+    fuel_cpo = prices["used_fuel"] if prices else fuel_target
     if prices:
         target_msrp = prices["new_msrp"]
         new_price = prices["new_msrp"] + prices["delivery"]
@@ -299,7 +309,7 @@ def build_plan(
         options.append(option(
             "new_toyota", f"Lease a new {target}", f"New {target}", pm,
             CostBreakdown(
-                payments=pm * H, fuel=fuel(fuel_target, mpy, H), maintenance=maintenance(0, years, True, True),
+                payments=pm * H, fuel=fuel(fuel_new, mpy, H), maintenance=maintenance(0, years, True, True),
                 insurance=new_ins * H, fees=fees, equity_credit=0,
             ),
             [new_source, *down,
@@ -314,7 +324,7 @@ def build_plan(
         options.append(option(
             "new_toyota", f"Get a new {target}", f"New {target}", pm,
             CostBreakdown(
-                payments=pm * min(H, A["finance_term_months"]), fuel=fuel(fuel_target, mpy, H),
+                payments=pm * min(H, A["finance_term_months"]), fuel=fuel(fuel_new, mpy, H),
                 maintenance=maintenance(0, years, True, True), insurance=new_ins * H, fees=fees,
                 equity_at_end=value_end - bal_end,
             ),
@@ -341,7 +351,7 @@ def build_plan(
     if not same_car: options.append(option(
         "certified_used", f"Certified Used {target}", f"{cpo_year} {target}", pm,
         CostBreakdown(
-            payments=pm * min(H, A["finance_term_months"]), fuel=fuel(fuel_target, mpy, H),
+            payments=pm * min(H, A["finance_term_months"]), fuel=fuel(fuel_cpo, mpy, H),
             maintenance=maintenance(A["certified_used_age_years"], years, True, False), insurance=ins * H,
             fees=fees, equity_at_end=value_end - bal_end,
         ),

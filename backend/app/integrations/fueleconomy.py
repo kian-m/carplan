@@ -5,6 +5,7 @@ Model names are EPA's, which are more specific than NHTSA's ("RAV4 Hybrid AWD" v
 so `lookup` fuzzy-matches a plain model name to the closest EPA variant.
 """
 
+import re
 from typing import Any
 
 import httpx
@@ -78,7 +79,7 @@ async def vehicle(vehicle_id: str) -> dict:
     return {k: _num(v) if k in NUMERIC else (v or None) for k, v in out.items()}
 
 
-async def lookup(year: int, make: str, model: str) -> dict | None:
+async def lookup(year: int, make: str, model: str, trim: str | None = None) -> dict | None:
     """Best EPA match for a plain year/make/model, plus the other variants to choose from."""
     all_models = await models(year, make)
     wanted = model.lower()
@@ -86,6 +87,11 @@ async def lookup(year: int, make: str, model: str) -> dict | None:
     # Prefer the shortest name containing the query: "RAV4" → "RAV4 AWD" before "RAV4 Hybrid AWD".
     partial = sorted((m for m in all_models if wanted in m.lower()), key=len)
     candidates = exact or partial
+    # A trim named in the EPA model picks it: a 2024 Camry SE is "Camry LE/SE" (2.5L), not "Camry" (the V6).
+    if trim:
+        t = trim.lower().split()[0]
+        named = sorted((m for m in partial if t in re.split(r"[\s/&]+", m.lower())), key=len)
+        candidates = named + [m for m in candidates if m not in named]
     if not candidates:
         return None
     variants = await options(year, make, candidates[0])

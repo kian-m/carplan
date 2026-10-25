@@ -9,6 +9,7 @@ from datetime import date
 from app.carplan.models import Vehicle
 from app.integrations import serpapi, tiger
 
+YEAR = re.compile(r"\b((?:19|20)\d{2})\b")
 PRICE = re.compile(r"\$\s?(\d{1,3}(?:,\d{3})+|\d{4,6})")
 _cache: dict[str, tuple[float, dict]] = {}  # SerpApi searches are metered; reuse results per vehicle
 RETRY_AFTER = 600  # seconds before retrying a search that found too few listings
@@ -22,6 +23,13 @@ CREATE TABLE IF NOT EXISTS market_values (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 )
 """
+
+
+def _year_before(text: str, at: int, title: str) -> int | None:
+    """The model year a price belongs to: the last year written before it in the snippet, or the
+    page title's year when the snippet names none."""
+    years = YEAR.findall(text[max(0, at - 120):at]) or YEAR.findall(title)
+    return int(years[-1]) if years else None
 
 
 async def _save(key: str, result: dict) -> None:
@@ -68,22 +76,31 @@ async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin
         return base
 
     # Include the state: "for sale Austin" alone matches retail sales pages, not car listings.
-    query = f"used {v.year} {v.make} {v.model} {v.trim or ''} for sale {place}".replace("  ", " ")
-    try:
-        data = await serpapi.google(query, location=location, num=20, gl="us", hl="en")
-    except Exception:
-        data = {}
-
+    # When the trim search finds too few same-year prices, a search without the trim adds more.
+    queries = [f"used {v.year} {v.make} {v.model} {v.trim} for sale {place}", f"used {v.year} {v.make} {v.model} for sale {place}"]
     prices: list[int] = []
     sources: list[dict] = []
-    for r in data.get("organic_results", []):
-        text = " ".join(str(x) for x in (r.get("title"), r.get("snippet"), r.get("rich_snippet")) if x)
-        # Drop prices that can't be this car (accessories, monthly payments, other trims far off).
-        found = [int(m.replace(",", "")) for m in PRICE.findall(text)]
-        found = [p for p in found if base["value"] * 0.5 <= p <= base["value"] * 1.8]
-        if found:
-            prices += found
-            sources.append({"title": r.get("source") or r.get("title"), "url": r.get("link")})
+    seen: set[tuple] = set()
+    for query in queries if v.trim else queries[1:]:
+        try:
+            data = await serpapi.google(query, location=location, num=20, gl="us", hl="en")
+        except Exception:
+            data = {}
+        for r in data.get("organic_results", []):
+            text = " ".join(str(x) for x in (r.get("title"), r.get("snippet"), r.get("rich_snippet")) if x)
+            # Drop prices that can't be this car (accessories, monthly payments, other trims far off), and
+            # prices for other model years: a dealer page lists "2026 CR-V EX-L $34,662; 2025 CR-V EX $32,268".
+            found = [int(m.group(1).replace(",", "")) for m in PRICE.finditer(text)
+                     if _year_before(text, m.start(), r.get("title") or "") == v.year]
+            found = [p for p in found if base["value"] * 0.4 <= p <= base["value"] * 2.0
+                     and (r.get("link"), p) not in seen]
+            seen.update((r.get("link"), p) for p in found)
+            if found:
+                prices += found
+                if not any(x["url"] == r.get("link") for x in sources):
+                    sources.append({"title": r.get("source") or r.get("title"), "url": r.get("link")})
+        if len(prices) >= 3:
+            break
 
     if len(prices) < 3:
         result = await _last_good(key) or base

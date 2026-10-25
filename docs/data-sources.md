@@ -18,7 +18,7 @@ A cheat sheet for judging Q&A. **Live** means pulled from a real data source for
 
 | Number | Live or estimate | How |
 |---|---|---|
-| Market value | Live | **SerpApi** Google search for "used {year} {make} {model} {trim} for sale Austin TX" (US results). We pull prices from listing sites, drop any under 50% or over 180% of our estimate, and need at least 3. **Value = middle (median) price.** |
+| Market value | Live | **SerpApi** Google search for "used {year} {make} {model} {trim} for sale Austin TX" (US results), plus a search without the trim when that finds fewer than 3 prices. We keep a price only when the model year written just before it (or the page title's year) matches the car, so a dealer page listing "2026 CR-V $34,662" doesn't price a 2022. We drop prices under 40% or over 200% of our estimate, need at least 3, and use the middle one. The last good result is saved in Tiger. Drivers can adjust it. |
 | Value range shown | Live | 25th to 75th percentile of those listing prices |
 | If too few listings | Estimate | Original price × 85% × 92% per year of age after the first, minus 8¢ per mile over 12,000 a year; never below 20% of original price |
 | Driver's own value | Driver | The value slider overrides the estimate (80% of the low end to 120% of the high end) |
@@ -38,7 +38,7 @@ A cheat sheet for judging Q&A. **Live** means pulled from a real data source for
 
 | Cost | Live or estimate | Value used |
 |---|---|---|
-| **Fuel** | Live | **EPA fueleconomy.gov** yearly fuel cost for the exact car (EPA figure at 15,000 miles), scaled to the driver's miles. $1,900 a year if the EPA has no match |
+| **Fuel** | Live | **EPA fueleconomy.gov** yearly fuel cost at 15,000 miles, scaled to the driver's miles. Your car: the EPA entry matching its trim (a 2023 Camry SE is "Camry LE/SE", the 2.5L). Comparison Toyotas: the EPA figure for each card's exact trim, e.g. used 2024 Camry SE (gas) $2,000, new Camry SE hybrid $1,400. $1,900 a year if the EPA has no match |
 | **Maintenance (upkeep)** | Estimate | $450 a year for cars under 3, $750 for ages 3 to 5, $1,100 after. Other brands +20%. New Toyotas $0 for 2 years (ToyotaCare: 2 years / 25,000 miles) |
 | **Insurance** | Estimate | $165 a month; new cars +8% |
 | **Value loss (depreciation)** | Sourced | 10.3% a year for every brand: iSeeCars' 2026 study found the average car loses 41.8% over 5 years. +1% a year for every 3,000 miles over 12,000 (our estimate). New cars lose 15% the first year (our estimate) |
