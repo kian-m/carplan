@@ -2,13 +2,15 @@
 
 import re
 import statistics
+import time
 from datetime import date
 
 from app.carplan.models import Vehicle
 from app.integrations import serpapi
 
 PRICE = re.compile(r"\$\s?(\d{1,3}(?:,\d{3})+|\d{4,6})")
-_cache: dict[str, dict] = {}  # SerpApi searches are metered; reuse results per vehicle
+_cache: dict[str, tuple[float, dict]] = {}  # SerpApi searches are metered; reuse results per vehicle
+RETRY_AFTER = 600  # seconds before retrying a search that found too few listings
 
 
 def fallback(v: Vehicle) -> dict:
@@ -22,8 +24,8 @@ def fallback(v: Vehicle) -> dict:
 
 async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin, Texas, United States") -> dict:
     key = f"{v.year}|{v.make}|{v.model}|{v.trim}|{place}".lower()
-    if key in _cache:
-        return _cache[key]
+    if key in _cache and (_cache[key][1]["method"] == "listings" or time.time() - _cache[key][0] < RETRY_AFTER):
+        return _cache[key][1]
 
     base = fallback(v)
     if not serpapi.configured():
@@ -32,7 +34,7 @@ async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin
     # Include the state: "for sale Austin" alone matches retail sales pages, not car listings.
     query = f"used {v.year} {v.make} {v.model} {v.trim or ''} for sale {place}".replace("  ", " ")
     try:
-        data = await serpapi.google(query, location=location, num=20)
+        data = await serpapi.google(query, location=location, num=20, gl="us", hl="en")
     except Exception:
         return base
 
@@ -60,5 +62,5 @@ async def estimate(v: Vehicle, place: str = "Austin TX", location: str = "Austin
             "sources": sources[:6],
             "listing_count": len(prices),
         }
-    _cache[key] = result
+    _cache[key] = (time.time(), result)
     return result

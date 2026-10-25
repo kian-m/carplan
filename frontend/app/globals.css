@@ -79,6 +79,20 @@ input[type="range"] {
   accent-color: var(--color-tred);
 }
 
+/* Marks a number that just changed after a slider move. */
+@keyframes flash {
+  from {
+    background-color: rgb(235 10 30 / 0.16);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.flash {
+  animation: flash 1s ease-out;
+  border-radius: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

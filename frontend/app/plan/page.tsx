@@ -24,6 +24,24 @@ function useDebounced<T>(value: T, ms: number) {
   return v;
 }
 
+// Briefly highlights its contents when `value` changes, so slider effects are visible.
+function Live({ value, children, className = "" }: { value: unknown; children: React.ReactNode; className?: string }) {
+  const first = useRef(true);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    setTick((t) => t + 1);
+  }, [value]);
+  return (
+    <span key={tick} className={`${tick ? "flash" : ""} ${className}`}>
+      {children}
+    </span>
+  );
+}
+
 function situationLine(input: PlanInput, months: number) {
   const c = input.contract;
   if (c.kind === "lease") return months > 0 ? `Lease ends in ${months} month${months === 1 ? "" : "s"}` : "Lease ending now";
@@ -38,11 +56,13 @@ function Answer({
   data,
   explanation,
   gap,
+  updating,
 }: {
   input: PlanInput;
   data: PlanResponse;
   explanation: Explanation | null;
   gap?: TfsRecommendation;
+  updating: boolean;
 }) {
   const best = data.plan.options.find((o) => o.id === data.plan.recommended)!;
   const v = input.vehicle;
@@ -62,7 +82,8 @@ function Answer({
       </p>
 
       {explanation ? (
-        <>
+        <div className={updating ? "opacity-50 transition-opacity" : "transition-opacity"} aria-busy={updating}>
+          {updating && <p className="mt-2 text-xs font-semibold text-tred">Updating for your changes…</p>}
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{explanation.headline}</h1>
           <p className="mt-3 text-lg">{explanation.summary}</p>
           <ul className="mt-5 space-y-3">
@@ -73,7 +94,7 @@ function Answer({
               </li>
             ))}
           </ul>
-        </>
+        </div>
       ) : (
         <>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{best.title}.</h1>
@@ -195,11 +216,11 @@ function Adjusters({
             {lease ? "Your buyout price at lease end" : "What you owe today"}:{" "}
             <span className="font-semibold tabular-nums">{usd(s.payoff)}</span>
           </p>
-          <p className={s.equity >= 0 ? "font-semibold text-tgreen" : "font-semibold text-tred"}>
+          <Live value={Math.round(s.equity)} className={s.equity >= 0 ? "font-semibold text-tgreen" : "font-semibold text-tred"}>
             {s.equity >= 0
               ? `${usd(s.equity)} in equity`
               : `${usd(-s.equity)} more than it's worth`}
-          </p>
+          </Live>
         </div>
       </div>
     </section>
@@ -236,11 +257,14 @@ function OptionCard({ o, best, years }: { o: Option; best: boolean; years: numbe
       <h3 className="text-lg font-semibold">{o.title}</h3>
       <p className="text-sm text-tgray">{o.vehicle_label}</p>
       <p className="mt-4 text-3xl font-bold tabular-nums">
-        {usd(o.monthly_payment)}
-        <span className="text-base font-normal text-tgray">/mo</span>
+        <Live value={Math.round(o.true_monthly_cost)}>{usd(o.true_monthly_cost)}</Live>
+        <span className="text-base font-normal text-tgray">/mo all-in</span>
       </p>
       <p className="mt-1 text-sm">
-        True cost <span className="font-semibold tabular-nums">{usd(o.true_monthly_cost)}/mo</span> over {years} years
+        Monthly payment{" "}
+        <Live value={Math.round(o.monthly_payment)} className="font-semibold tabular-nums">
+          {usd(o.monthly_payment)}
+        </Live>
       </p>
       {!o.affordable && (
         <p className="mt-2 text-sm font-semibold text-tred">Above the 20% of income we recommend for car costs</p>
@@ -413,7 +437,8 @@ function PlanPage() {
   const [explanation, setExplanation] = useState<Explanation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const explainedFor = useRef<string | null>(null);
+  const explainedFor = useRef<string | null>(null); // last explanation requested
+  const shownFor = useRef<string | null>(null); // explanation currently on screen
 
   // Load the starting input: a sample driver, or what the customer entered on /start.
   useEffect(() => {
@@ -457,18 +482,38 @@ function PlanPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced]);
 
-  // Re-explain only when the recommendation itself changes (Gemini takes a few seconds).
+  // Gemini takes a few seconds, so re-explain once the sliders settle, and only for meaningful changes.
+  // The previous explanation stays on screen (dimmed) unless the recommendation itself changed.
   const recommended = data?.plan.recommended;
-  const explainInput = useDebounced(effective, 700);
+  const explainInput = useDebounced(effective, 900);
+  const [updating, setUpdating] = useState(false);
   useEffect(() => {
-    if (!explainInput || !recommended) return;
-    const key = `${recommended}`;
-    if (explainedFor.current === key) return;
+    if (!explainInput || !recommended || explainInput.market_value === null) return;
+    const key = `${recommended}|${Math.round((explainInput.market_value ?? 0) / 250)}|${Math.round(explainInput.miles_per_year / 500)}`;
+    if (explainedFor.current === key) {
+      if (shownFor.current === key) setUpdating(false); // small nudge: current text still accurate
+      return;
+    }
+    const changedPick = !explainedFor.current?.startsWith(`${recommended}|`);
     explainedFor.current = key;
-    setExplanation(null);
-    carplan.explain(explainInput).then((e) => explainedFor.current === key && setExplanation(e)).catch(() => {});
+    if (changedPick) setExplanation(null);
+    setUpdating(true);
+    carplan
+      .explain(explainInput)
+      .then((e) => {
+        if (explainedFor.current !== key) return;
+        shownFor.current = key;
+        setExplanation(e);
+        setUpdating(false);
+      })
+      .catch(() => explainedFor.current === key && setUpdating(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recommended, explainInput]);
+  // Sliding again marks the current text as stale right away.
+  useEffect(() => {
+    if (explanation && effective !== explainInput) setUpdating(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effective]);
 
   if (error) {
     return (
@@ -494,14 +539,14 @@ function PlanPage() {
       <Link href="/" className="mt-6 inline-block text-sm text-tgray underline">
         Start over
       </Link>
-      <Answer input={input} data={data} explanation={explanation} gap={gap} />
+      <Answer input={input} data={data} explanation={explanation} gap={gap} updating={updating && !!explanation} />
       <Adjusters data={data} value={value} setValue={setValue} miles={miles} setMiles={setMiles} />
 
       <section id="options" className="mt-12 scroll-mt-20">
         <h2 className="text-2xl font-bold tracking-tight">Every option, side by side</h2>
         <p className="mt-1 text-tgray">
-          True cost includes payments, fuel, maintenance, insurance and fees, minus what you&rsquo;d own at the end of{" "}
-          {years} years.
+          All-in monthly cost: payments, fuel, maintenance, insurance and fees over {years} years, minus what you&rsquo;d
+          own at the end.
         </p>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           {options.map((o) => (
