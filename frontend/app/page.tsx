@@ -27,20 +27,20 @@ export default function Home() {
         What&rsquo;s your car&rsquo;s next move?
       </h1>
       <p className="mt-4 max-w-lg text-lg text-tgray">
-        Add your car and we&rsquo;ll compare every option side by side, using what it&rsquo;s actually worth today.
+        Add your car. We&rsquo;ll show every option side by side, based on what your car is worth today.
       </p>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2">
         <PathCard
           href="/start?path=toyota"
           title="I drive a Toyota"
-          body="Lease ending or paying off a loan? See whether to keep it, buy it, or move into something new."
+          body="Lease ending or paying off a loan? See if you should keep it, buy it or get something new."
           cta="Plan my next move"
         />
         <PathCard
           href="/start?path=other"
           title="I drive another brand"
-          body="See what your car really costs to keep, and how a comparable Toyota stacks up over five years."
+          body="See what your car really costs to keep. Then compare it with a similar Toyota over five years."
           cta="Compare my car"
         />
       </div>

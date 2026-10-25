@@ -14,7 +14,7 @@ ADDRESS = {"street_number": "2100", "street_name": "Speedway", "city": "Austin",
 DRIVERS: dict[str, dict] = {
     "maria": {
         "first": "Maria", "last": "Lopez",
-        "tagline": "RAV4 lease ends in 3 months",
+        "tagline": "Lease ends in 3 months",
         "input": PlanInput(
             path="toyota", name="Maria",
             vehicle=Vehicle(vin="2T3P1RFV9NC104512", year=2022, make="Toyota", model="RAV4", trim="XLE",
@@ -30,7 +30,7 @@ DRIVERS: dict[str, dict] = {
     },
     "sam": {
         "first": "Sam", "last": "Patel",
-        "tagline": "Corolla Hybrid loan, new baby on the way",
+        "tagline": "Car loan, new baby on the way",
         "input": PlanInput(
             path="toyota", name="Sam",
             vehicle=Vehicle(vin="JTDBCMFE2RJ012345", year=2024, make="Toyota", model="Corolla Hybrid", trim="LE",
@@ -46,7 +46,7 @@ DRIVERS: dict[str, dict] = {
     },
     "jordan": {
         "first": "Jordan", "last": "Kim",
-        "tagline": "Honda CR-V lease, recent grad",
+        "tagline": "Lease ending, just graduated",
         "input": PlanInput(
             path="other", name="Jordan", flags=["college"],
             vehicle=Vehicle(vin="7FARW2H58NE004117", year=2022, make="Honda", model="CR-V", trim="EX",

@@ -45,7 +45,7 @@ ASSUMPTIONS = {
     "max_car_budget_pct_of_income": 0.20,
     "basic_warranty": {"months": 36, "miles": 36000},
     "fuel": "EPA annual fuel cost (fueleconomy.gov), scaled to your miles per year",
-    "rates_disclaimer": "Example rates for comparison only. Actual rates and terms depend on credit approval through TFS.",
+    "rates_disclaimer": "These rates are examples. Your real rate depends on your credit.",
 }
 
 # Approximate starting MSRPs for current Toyota models.
@@ -199,15 +199,15 @@ def build_plan(
         notes: list[str] = []
         if c.kind == "lease":
             if equity > 0:
-                notes.append(f"Your lease has about ${equity:,.0f} in equity, applied to your next step")
+                notes.append(f"Your car is worth about ${equity:,.0f} more than your buyout. That money goes toward your next move.")
                 return 0.0, equity, notes
             fee = excess_fee + (0 if staying_with_toyota else A["disposition_fee"])
             if excess_fee:
-                notes.append(f"Returning it: about {excess_miles:,} miles over your allowance (${excess_fee:,.0f})")
+                notes.append(f"If you return it, you'll be about {excess_miles:,} miles over your limit (${excess_fee:,.0f} in fees).")
             return fee, 0.0, notes
         if c.kind == "loan":
             if equity < 0:
-                notes.append(f"You owe ${-equity:,.0f} more than the car is worth; that gets rolled into the new loan")
+                notes.append(f"You owe ${-equity:,.0f} more than your car is worth. That amount gets added to the new loan.")
             return 0.0, equity, notes  # negative equity_credit adds cost
         return 0.0, equity, notes
 
@@ -239,9 +239,9 @@ def build_plan(
                 maintenance=maintenance(age_at_decision, years, is_toyota, False), insurance=ins * H,
                 equity_at_end=value_end - bal_end,
             ),
-            [f"Buyout price ${payoff:,.0f}; worth about ${value_at_decision:,.0f} when your lease ends",
-             "No mileage limits or lease-end charges",
-             f"Includes ${financed - payoff:,.0f} sales tax and fees"],
+            [f"Buyout price: ${payoff:,.0f}. Worth about ${value_at_decision:,.0f} when your lease ends.",
+             "No mileage limits or lease-end charges.",
+             f"Includes ${financed - payoff:,.0f} in sales tax and fees."],
             ["payoff_quote"], payoff / max(value_at_decision, 1),
         ))
     else:
@@ -256,7 +256,7 @@ def build_plan(
                 maintenance=maintenance(age_at_decision, years, is_toyota, False), insurance=ins * H,
                 equity_at_end=value_end - bal_end,
             ),
-            [f"{months_left} payments left" if c.kind == "loan" else "Paid off"],
+            [f"{months_left} payments left." if c.kind == "loan" else "Paid off."],
             [], payoff / max(value_at_decision, 1) if c.kind == "loan" else None,
         ))
 
@@ -274,7 +274,7 @@ def build_plan(
                 payments=pm * H, fuel=fuel(fuel_target, mpy, H), maintenance=maintenance(0, years, True, True),
                 insurance=new_ins * H, fees=fees, equity_credit=0,
             ),
-            exit_notes + ["ToyotaCare: 2 years / 25,000 miles of scheduled maintenance included"],
+            exit_notes + ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["turn_in_new", "repeat_customer"],
         ))
     else:
@@ -289,7 +289,7 @@ def build_plan(
                 maintenance=maintenance(0, years, True, True), insurance=new_ins * H, fees=fees,
                 equity_at_end=value_end - bal_end,
             ),
-            exit_notes + ["ToyotaCare: 2 years / 25,000 miles of scheduled maintenance included"],
+            exit_notes + ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["finance_new"] + (["repeat_customer"] if c.lender == "TFS" else ["prequalify"]),
             principal / target_msrp,
         ))
@@ -307,7 +307,7 @@ def build_plan(
             maintenance=maintenance(A["certified_used_age_years"], years, True, False), insurance=ins * H,
             fees=fees, equity_at_end=value_end - bal_end,
         ),
-        exit_notes + ["160-point inspection, Toyota Certified warranty, 1 year of Roadside Assistance"],
+        exit_notes + ["Checked on 160 points. Comes with a Toyota warranty and 1 year of roadside help."],
         ["certified_used"], principal / cpo_price,
     ))
 
@@ -320,7 +320,7 @@ def build_plan(
             payments=pm * H, fuel=fuel(fuel_target, mpy, H), fees=fees_flex,
             equity_credit=credit_flex,
         ),
-        flex_notes + ["Insurance and maintenance included; swap or pause anytime (concept)"],
+        flex_notes + ["A future idea: one monthly price with insurance and upkeep included. Swap or pause anytime."],
         [],
     ))
 
@@ -337,38 +337,39 @@ def build_plan(
 
     # GAP: underwater today, or the recommended loan starts underwater
     if c.kind in ("loan", "lease") and equity < 0 and best.id in ("keep", "buy_out"):
-        rec("gap", f"You owe about ${-equity:,.0f} more than your {v.model} is worth. If it's totaled or stolen, insurance "
-                   f"pays market value, and GAP can cover the ${-equity:,.0f} difference.", "high")
+        rec("gap", f"You owe about ${-equity:,.0f} more than your {v.model} is worth. If it's stolen or totaled, insurance "
+                   f"only pays what it's worth. GAP can cover the ${-equity:,.0f} difference.", "high")
     elif best.loan_to_value and best.loan_to_value > 1.0:
-        rec("gap", f"Your new loan would start at {best.loan_to_value:.0%} of the car's value. GAP covers the difference "
-                   "if the car is totaled before you catch up.", "high")
+        rec("gap", "Your new loan would start out bigger than the car's value. If the car is totaled early on, "
+                   "GAP covers the difference.", "high")
     # VSA: keeping a car that leaves the basic warranty during the plan
     if best.id in ("buy_out", "keep") and is_toyota and warranty_left is not None and warranty_left < H:
-        when = "has already ended" if warranty_left == 0 else f"ends in about {warranty_left} months"
-        rec("vsa", f"Your basic warranty {when}. A Vehicle Service Agreement helps cover repair costs after that.", "medium")
+        when = "is over" if warranty_left == 0 else f"ends in about {warranty_left} months"
+        rec("vsa", f"Your factory warranty {when}. A Vehicle Service Agreement helps pay for repairs after that.", "medium")
     # Prepaid maintenance
     if best.id in ("buy_out", "keep") and is_toyota and (age_now >= 2 or v.odometer >= 25000):
-        rec("auto_care", "Your ToyotaCare coverage has ended. Prepaid maintenance locks in today's prices for scheduled service.", "medium")
+        rec("auto_care", "Your free ToyotaCare service is over. Toyota Auto Care lets you pay for future service now, at today's prices.", "medium")
     elif best.id == "new_toyota":
-        rec("toyotacare_plus", "Extend the included ToyotaCare with prepaid maintenance and major services.", "low")
+        rec("toyotacare_plus", "Add more years of service to your free ToyotaCare plan.", "low")
     # Tire & Wheel for heavy drivers
     if mpy >= 15000:
-        rec("tire_wheel", f"At {mpy:,} miles a year, road-hazard damage to tires and wheels is more likely.", "medium")
+        rec("tire_wheel", f"You drive {mpy:,} miles a year. More miles means more chances for potholes and nails to damage your tires.", "medium")
     # Excess Wear & Use for new leases
     if best.id == "new_toyota" and c.kind == "lease" and inp.path == "toyota" and (excess_miles > 0 or mpy > 12000):
-        rec("excess_wear", "You've driven past your allowance on this lease. Excess Wear & Use protection helps avoid "
-                           "lease-end charges next time.", "medium")
+        rec("excess_wear", ("You're on track to go over your miles on this lease." if excess_miles > 0 else
+                            "You drive more than most leases allow.") +
+            " Excess Wear & Use protection helps you avoid charges when your next lease ends.", "medium")
     # Rebates and loyalty
     if best.id in ("new_toyota", "certified_used"):
         if c.lender == "TFS":
-            rec("repeat_customer", "As a current TFS customer you may qualify for repeat customer benefits.", "medium")
+            rec("repeat_customer", "You already finance with TFS, so you may get repeat customer savings.", "medium")
         else:
-            rec("prequalify", "See if you're prequalified with Toyota Financial Services in a few steps.", "medium")
-        rec("insurance", "Compare a Toyota Insurance quote for your new vehicle.", "low")
+            rec("prequalify", "Find out what you could qualify for with Toyota Financial Services. It takes a few steps.", "medium")
+        rec("insurance", "Get a Toyota Insurance quote for your new car.", "low")
     if "college" in inp.flags:
-        rec("college_rebate", "As a recent grad you may qualify for the TFS College Rebate Program.", "medium")
+        rec("college_rebate", "Recent grads can get money off with the TFS College Rebate.", "medium")
     if "military" in inp.flags:
-        rec("military_rebate", "You may qualify for the TFS Military Rebate.", "medium")
+        rec("military_rebate", "Military members can get money off with the TFS Military Rebate.", "medium")
 
     order = {"high": 0, "medium": 1, "low": 2}
     recs.sort(key=lambda r: order[r.priority])

@@ -11,6 +11,10 @@ dependencies = [
 ]
 
 [dependency-groups]
+e2e = [
+    "pytest>=9.1.1",
+    "pytest-playwright>=0.10.0",
+]
 eval = [
     "pillow>=13.0.0",
     "pymupdf>=2.0",

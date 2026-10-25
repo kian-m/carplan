@@ -108,7 +108,7 @@ function Answer({
 
       {gap && (
         <div className="mt-6 border-l-4 border-tred bg-tsurface p-4">
-          <p className="font-semibold">Protect the gap: {gap.name}</p>
+          <p className="font-semibold">Protect yourself with GAP</p>
           <p className="mt-1 text-sm">{gap.reason}</p>
           <a href={gap.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-tred underline">
             Learn about GAP
@@ -168,9 +168,9 @@ function Adjusters({
         />
         <p className="mt-2 text-xs text-tgray">
           {s.market_value_method === "listings" || (s.market_value_method === "user" && sources.length)
-            ? `Typical range ${usd(s.market_value_low)} to ${usd(s.market_value_high)}, from ${sources.length} listing sites near Austin. `
-            : `Estimated from the original price, age and mileage. `}
-          Know something we don&rsquo;t, like new tires or a dent? Slide to adjust.
+            ? `Similar cars near Austin sell for ${usd(s.market_value_low)} to ${usd(s.market_value_high)} (from ${sources.length} websites). `
+            : `Estimated from the car’s original price, age and miles. `}
+          New tires or a dent? Slide to change it.
         </p>
         {sources.length > 0 && (
           <details className="mt-2 text-xs">
@@ -205,8 +205,8 @@ function Adjusters({
         />
         <p className="mt-2 text-xs text-tgray">
           {lease && s.projected_excess_miles > 0
-            ? `At this pace you'll be ${s.projected_excess_miles.toLocaleString()} miles over your lease allowance (${usd(s.projected_excess_fee)} if you return it).`
-            : "Based on your recent driving. Change it to see how your best move shifts."}
+            ? `At this rate you’ll go ${s.projected_excess_miles.toLocaleString()} miles over your lease limit. That’s ${usd(s.projected_excess_fee)} in fees if you return it.`
+            : "Based on your recent driving. Change it to see if your best move changes."}
         </p>
       </div>
 
@@ -224,6 +224,46 @@ function Adjusters({
         </div>
       </div>
     </section>
+  );
+}
+
+// --- how we calculated this ------------------------------------------------
+
+function Assumptions({ data }: { data: PlanResponse }) {
+  const a = data.plan.assumptions as Record<string, number & Record<string, number>>;
+  const pct = (n: number) => `${+(n * 100).toFixed(2)}%`;
+  const m = a.maintenance_per_year;
+  const value = {
+    listings: "the middle price of similar cars for sale near Austin",
+    user: "the number you set",
+    estimate: "an estimate from the car’s original price, age and miles",
+  }[data.plan.situation.market_value_method];
+  return (
+    <ul className="list-disc space-y-2 pl-5">
+      <li>Car value: {value}.</li>
+      <li>
+        Gas: the EPA says your car costs {usd(data.fuel.current_annual)} a year to fuel, and the {data.plan.toyota_equivalent}{" "}
+        {usd(data.fuel.toyota_annual)}, at 15,000 miles. We adjusted for your {data.input.miles_per_year.toLocaleString()} miles.
+      </li>
+      <li>
+        Loan rates: {a.new_apr}% for a new Toyota, {a.certified_used_apr}% for Certified Used or a buyout. {a.rates_disclaimer}
+      </li>
+      <li>
+        Taxes and fees: Texas sales tax of {pct(a.sales_tax_rate)} and {usd(a.dealer_fees)} in dealer fees.
+      </li>
+      <li>
+        Insurance: about {usd(a.insurance_monthly)} a month, and {pct(a.new_car_insurance_multiplier - 1)} more for a new car.
+      </li>
+      <li>
+        Upkeep: {usd(m["0-2"])} a year for cars under 3 years old, {usd(m["3-5"])} for 3 to 5 years, and {usd(m["6+"])} after
+        that. Other brands cost {pct(a.non_toyota_maintenance_multiplier - 1)} more. New Toyotas get 2 years of free service.
+      </li>
+      <li>
+        Value loss: about {pct(a.depreciation_per_year.toyota)} a year for a Toyota, more for most other brands, and more if you
+        drive over 12,000 miles a year.
+      </li>
+      <li>Our math follows fixed rules. AI only writes the words you read.</li>
+    </ul>
   );
 }
 
@@ -345,8 +385,8 @@ function RecallAlerts({ input }: { input: PlanInput }) {
       const r = await carplan.subscribe({ email, year: v.year, make: v.make, model: v.model, vin: v.vin });
       setState("done");
       const recalls = r.open_recalls
-        ? `NHTSA lists ${r.open_recalls} recall${r.open_recalls === 1 ? "" : "s"} for your ${car} right now.`
-        : `There are no open recalls for your ${car} right now.`;
+        ? `Your ${car} has ${r.open_recalls} open safety recall${r.open_recalls === 1 ? "" : "s"} right now.`
+        : `Your ${car} has no open safety recalls right now.`;
       setMsg(`${r.email_sent ? "Check your inbox. " : ""}${recalls} We'll email you if that changes.`);
     } catch (err) {
       setState("error");
@@ -358,8 +398,7 @@ function RecallAlerts({ input }: { input: PlanInput }) {
     <section className="tcard mt-12">
       <h2 className="text-xl font-semibold">Get free recall alerts for your {car}</h2>
       <p className="mt-1 text-tgray">
-        We&rsquo;ll email you if NHTSA issues a safety recall, plus a heads-up before your
-        {input.contract.kind === "lease" ? " lease ends" : " next big decision"}. Unsubscribe anytime.
+        We&rsquo;ll email you if there&rsquo;s a safety recall on your car. It&rsquo;s free, and you can unsubscribe anytime.
       </p>
       {state === "done" ? (
         <p className="mt-4 font-semibold" role="status">
@@ -545,8 +584,8 @@ function PlanPage() {
       <section id="options" className="mt-12 scroll-mt-20">
         <h2 className="text-2xl font-bold tracking-tight">Every option, side by side</h2>
         <p className="mt-1 text-tgray">
-          All-in monthly cost: payments, fuel, maintenance, insurance and fees over {years} years, minus what you&rsquo;d
-          own at the end.
+          The all-in cost per month adds up payments, gas, upkeep, insurance and fees for {years} years. Then it
+          subtracts what the car is still worth to you at the end.
         </p>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           {options.map((o) => (
@@ -562,19 +601,7 @@ function PlanPage() {
       <details className="mt-12 text-sm">
         <summary className="cursor-pointer font-semibold">How we calculated this</summary>
         <div className="mt-3 space-y-2 text-tgray">
-          <p>
-            Fuel: EPA estimates of {usd(data.fuel.current_annual)} a year for your car and {usd(data.fuel.toyota_annual)} for
-            the {data.plan.toyota_equivalent}, scaled to {data.input.miles_per_year.toLocaleString()} miles.
-          </p>
-          <p>Car value: {data.plan.situation.market_value_method === "listings" ? "median of current listings near Austin" : data.plan.situation.market_value_method === "user" ? "your adjustment" : "estimated from original price, age and mileage"}.</p>
-          <p>
-            Rates and assumptions:{" "}
-            {Object.entries(data.plan.assumptions)
-              .filter(([, v]) => typeof v === "number" || typeof v === "string")
-              .map(([k, v]) => `${k.replaceAll("_", " ")}: ${v}`)
-              .join(" · ")}
-          </p>
-          <p>The math is deterministic; AI only writes the explanation.</p>
+          <Assumptions data={data} />
         </div>
       </details>
     </div>

@@ -236,7 +236,7 @@ function StartPage() {
             <Num label="Payments made so far" value={c.elapsed} onChange={setCField("elapsed")} />
             {kind === "lease" ? (
               <>
-                <Num label="Buyout price at lease end" prefix="$" value={c.residual} onChange={setCField("residual")} hint="Called the residual value or purchase option price" />
+                <Num label="Buyout price at lease end" prefix="$" value={c.residual} onChange={setCField("residual")} hint="Your contract may call it the residual value or purchase option price." />
                 <Num label="Miles allowed a year" value={c.allowed} onChange={setCField("allowed")} />
                 <Num label="Charge per extra mile" prefix="$" value={c.fee} onChange={setCField("fee")} />
               </>

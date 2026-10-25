@@ -34,6 +34,10 @@ The frontend proxies `/api/*` to the backend (see `frontend/next.config.ts`), so
 
 Gemini reads uploaded contracts with **100% field accuracy** across PDFs and phone photos, and never returns personal data. See [backend/evals](backend/evals/README.md) for the method, the model comparison and how to rerun it.
 
+**End-to-end tests:** 22 browser tests cover every path a driver can take (`cd backend && E2E_URL=https://carplan.tech uv run --group e2e pytest ../e2e`).
+
+**Where every number comes from:** [docs/data-sources.md](docs/data-sources.md).
+
 ## Getting the keys
 
 - **Nessie:** https://api.nessieisreal.com. Sign in with GitHub and copy your key.

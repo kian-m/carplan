@@ -42,12 +42,12 @@ def _email(car: str, recalls: list[dict], token: str, welcome: bool) -> tuple[st
             f"{html.escape(r.get('Summary', ''))}<br><i>Fix: {html.escape(r.get('Remedy', 'Contact your dealer'))}</i></li>"
             for r in recalls[:5]
         )
-        body = f"<p>NHTSA lists {len(recalls)} recall{'s' if len(recalls) != 1 else ''} for your {html.escape(car)}:</p><ul>{items}</ul>" \
-               "<p>Recall repairs are free at any authorized dealer.</p>"
+        body = f"<p>There {'are' if len(recalls) != 1 else 'is'} {len(recalls)} open safety recall{'s' if len(recalls) != 1 else ''} for your {html.escape(car)}:</p><ul>{items}</ul>" \
+               "<p>Recall repairs are free at any dealer for your brand.</p>"
     else:
-        body = f"<p>Good news: there are no open NHTSA recalls for your {html.escape(car)} right now.</p>"
-    intro = (f"<p>You're signed up for free recall alerts for your {html.escape(car)}. We'll email you if NHTSA "
-             "issues a new recall.</p>") if welcome else ""
+        body = f"<p>Good news: there are no open safety recalls for your {html.escape(car)} right now.</p>"
+    intro = (f"<p>You're signed up for free recall alerts for your {html.escape(car)}. We'll email you if there's "
+             "a new safety recall.</p>") if welcome else ""
     subject = (f"Recall alerts are on for your {car}" if welcome
                else f"New recall for your {car}")
     page = (

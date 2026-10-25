@@ -13,6 +13,7 @@ SYSTEM = (
     "friendly language a first-time car buyer understands. Use ONLY the numbers provided; never invent "
     "prices, rates or savings. Round dollars to the nearest $10. No jargon: say 'what you owe' instead of "
     "'payoff', 'what it's worth' instead of 'market value'. Be honest when another option is close. "
+    "Write at a 6th-grade reading level: short sentences (under 15 words), everyday words. "
     "Write every field in sentence case (capitalize only the first word and proper nouns)."
 )
 
@@ -66,8 +67,8 @@ def template(inp: PlanInput, plan: Plan) -> dict:
     saving = f["savings_vs_runner_up"]
     return {
         "headline": best["title"],
-        "summary": f"It's the lowest total cost over {f['horizon_years']} years"
-                   + (f", about ${saving:,} less than the next best option." if saving > 0 else "."),
+        "summary": f"It costs the least over {f['horizon_years']} years"
+                   + (f", about ${saving:,} less than your next best choice." if saving > 0 else "."),
         "reasons": reasons[:3],
         "next_step": NEXT_STEP[best["id"]],
         "source": "template",
