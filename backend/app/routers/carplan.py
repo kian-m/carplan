@@ -148,6 +148,11 @@ async def parse_contract(file: UploadFile):
     if not (mime == "application/pdf" or mime.startswith("image/")):
         raise HTTPException(415, "Upload a PDF or a photo of your contract")
     out = await gemini.extract_from_file(data, mime, CONTRACT_PROMPT, CONTRACT_SCHEMA)
+    # Gemini occasionally returns a partial read; one retry nearly always gets the full contract.
+    if not out or not out.get("monthly_payment") or not out.get("term_months"):
+        retry = await gemini.extract_from_file(data, mime, CONTRACT_PROMPT, CONTRACT_SCHEMA)
+        if retry and len(retry) > len(out or {}):
+            out = retry
     if out and out.get("vin") and not out.get("model"):
         try:
             decoded = await nhtsa.decode_vin(out["vin"])
