@@ -53,6 +53,14 @@ def _facts(inp: PlanInput, plan: Plan) -> dict:
     best = next(o for o in plan.options if o.id == plan.recommended)
     others = sorted((o for o in plan.options if o.id != best.id), key=lambda o: o.total_cost)
     current = next((o for o in plan.options if o.id in ("keep", "buy_out")), None)
+    situation = plan.situation.model_dump(exclude={"market_value_sources"})
+    if inp.contract.kind == "lease" and plan.situation.equity > 0:
+        # With equity, switching cars means the dealer buys out the lease, so no mileage fee is ever
+        # charged. Leave the fee out so the explanation can't present it as a reason to buy out.
+        situation.pop("projected_excess_fee", None)
+        situation.pop("projected_excess_miles", None)
+        situation["mileage_fee_note"] = ("The car is worth more than the buyout, so switching cars avoids "
+                                         "lease mileage fees too. Mileage fees are not a reason to pick any option.")
     return _whole({
         "driver": inp.name,
         "car": f"{inp.vehicle.year} {inp.vehicle.make} {inp.vehicle.model}",
@@ -60,7 +68,7 @@ def _facts(inp: PlanInput, plan: Plan) -> dict:
         "contract": inp.contract.kind,
         "horizon_years": plan.horizon_months // 12,
         "miles_per_year": inp.miles_per_year,
-        "situation": plan.situation.model_dump(exclude={"market_value_sources"}),
+        "situation": situation,
         "recommended": best.model_dump(),
         "runner_up": others[0].model_dump() if others else None,
         "savings_vs_runner_up": round(others[0].total_cost - best.total_cost) if others else 0,

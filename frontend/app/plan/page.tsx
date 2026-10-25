@@ -231,6 +231,9 @@ function Adjusters({
   const min = Math.round((s.market_value_low * 0.8) / 100) * 100;
   const max = Math.round((s.market_value_high * 1.2) / 100) * 100;
   const sources = s.market_value_sources;
+  const c = data.input.contract;
+  const allowed = Math.round(((c.miles_allowed_per_year ?? 12000) * c.term_months) / 12);
+  const alreadyOver = Math.max(0, data.input.vehicle.odometer - allowed);
 
   return (
     <section className="mt-6 grid gap-5 lg:grid-cols-2" aria-label="Adjust your numbers">
@@ -300,8 +303,10 @@ function Adjusters({
           <p className="mt-2 flex gap-1.5 text-xs font-semibold text-tred">
             <Alert className="h-4 w-4 shrink-0" />
             <span>
+              {alreadyOver > 0 && `You’re already ${alreadyOver.toLocaleString()} miles over your ${allowed.toLocaleString()}-mile limit. `}
               At this rate you’ll go {s.projected_excess_miles.toLocaleString()} miles over your lease limit. That’s{" "}
-              {usd(s.projected_excess_fee)} in fees if you return it.
+              {usd(s.projected_excess_fee)} in fees if you return it
+              {s.equity > 0 ? ". Switching cars avoids them, because your equity pays off the lease." : "."}
             </span>
           </p>
         ) : (
