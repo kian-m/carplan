@@ -165,6 +165,10 @@ function StartPage() {
         <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-tline px-4 py-8 text-center hover:border-tred">
           <span className="font-semibold">Choose a file or take a photo</span>
           <span className="mt-1 text-xs text-tgray">PDF, JPG or PNG up to 15 MB</span>
+          <span className="mt-3 max-w-md text-xs text-tgray">
+            We only read your car and payment terms. Your file isn&rsquo;t saved. Feel free to cover your name, address
+            and account numbers before you upload.
+          </span>
           <input
             type="file"
             accept="application/pdf,image/*"
