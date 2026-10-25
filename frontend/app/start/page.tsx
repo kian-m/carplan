@@ -123,7 +123,7 @@ function StartPage() {
       apr: str(k.apr), financed: str(k.amount_financed), lender: k.lender ?? "",
     });
     setMoney({ income: str(Math.round(f.monthly_income)), bills: str(Math.round(f.monthly_bills)), source: f.source ?? "manual" });
-    setMiles(str(saved.miles_per_year) || "12000");
+    setMiles(String(saved.miles_per_year ?? 12000));
   }, [editing]);
 
   // Fixing a field clears its error right away.
@@ -220,7 +220,8 @@ function StartPage() {
     if (!car.make.trim()) e.make = "Add the make, like Toyota";
     if (!car.model.trim()) e.model = "Add the model, like RAV4";
     if (!car.odometer) e.odometer = "Add your current mileage. It's on the dashboard.";
-    if (!n(miles)) e.miles = "Add about how far you drive a year";
+    if (miles.trim() === "") e.miles = "Add about how far you drive a year";
+    else if (n(miles) < 0 || n(miles) > 50000) e.miles = "Use a number from 0 to 50,000";
     if (kind !== "owned") {
       if (!n(c.payment)) e.payment = "Add your monthly payment";
       if (!n(c.term)) e.term = "Add how many months your contract runs";
@@ -262,7 +263,7 @@ function StartPage() {
         lender: c.lender || null,
       },
       finances: { monthly_income: n(money.income), monthly_bills: n(money.bills), source: money.source },
-      miles_per_year: n(miles) || 12000,
+      miles_per_year: n(miles),
     };
     sessionStorage.setItem(INPUT_KEY, JSON.stringify(input));
     router.push("/plan");

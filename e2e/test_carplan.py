@@ -106,6 +106,16 @@ def test_mileage_slider_changes_lease_overage(page: Page, base_url):
     expect(note).not_to_have_text(before)
 
 
+@pytest.mark.parametrize("driver", ["maria", "jordan", "taylor", "alex"])
+def test_cheapest_option_wins_even_over_budget(base_url, driver):
+    # A tight budget flags options as over budget, but never makes us recommend one that costs more.
+    car = httpx.get(f"{base_url}/api/drivers/{driver}", timeout=30).json()
+    car["finances"] = {"monthly_income": 2200, "monthly_bills": 1500, "source": "manual"}
+    plan = httpx.post(f"{base_url}/api/plan", json=car, timeout=60).json()["plan"]
+    cheapest = min(plan["options"], key=lambda o: o["total_cost"])
+    assert plan["recommended"] == cheapest["id"]
+
+
 def test_every_tfs_service_is_listed_with_picks_marked(page: Page, base_url):
     open_plan(page, base_url, "taylor")
     catalog = page.locator("section[aria-labelledby=catalog]")

@@ -359,9 +359,10 @@ def build_plan(
         ["certified_used"], principal / cpo_price,
     ))
 
-    # --- pick the cheapest affordable option -------------------------------
-    pool = [o for o in options if o.affordable] or options
-    best = min(pool, key=lambda o: o.total_cost)
+    # --- pick the cheapest option -------------------------------
+    # The cheapest option always wins. Going over the budget guideline is shown on the card as a
+    # warning; it never pushes the driver into an option that costs more.
+    best = min(options, key=lambda o: o.total_cost)
 
     # --- TFS products that fit this situation ------------------------------
     recs: list[Recommendation] = []

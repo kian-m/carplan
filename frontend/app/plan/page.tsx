@@ -289,16 +289,16 @@ function Adjusters({
         <input
           id="miles"
           type="range"
-          min={3000}
-          max={30000}
+          min={0}
+          max={50000}
           step={500}
           value={miles}
           onChange={(e) => setMiles(Number(e.target.value))}
           className="mt-3 w-full"
         />
         <div className="flex justify-between text-xs text-tgray tabular-nums">
-          <span>3,000</span>
-          <span>30,000</span>
+          <span>0</span>
+          <span>50,000</span>
         </div>
         {lease && s.projected_excess_miles > 0 ? (
           <p className="mt-2 flex gap-1.5 text-xs font-semibold text-tred">
