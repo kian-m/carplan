@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
@@ -66,12 +66,7 @@ function Answer({
 }) {
   const best = data.plan.options.find((o) => o.id === data.plan.recommended)!;
   const v = input.vehicle;
-  // The button goes to the most relevant TFS page: the option's own product, else the top recommendation.
-  const ctaUrl =
-    data.plan.recommendations.find((r) => best.tfs_products.includes(r.product))?.url ??
-    data.plan.recommendations.find((r) => r.priority === "high")?.url ??
-    data.plan.recommendations[0]?.url ??
-    "https://www.toyotafinancial.com/us/en.html";
+  const cta = data.plan.next_step;
 
   return (
     <section className="tcard mt-6 p-6 sm:p-8">
@@ -117,8 +112,8 @@ function Answer({
       )}
 
       <div className="mt-7 flex flex-wrap gap-3">
-        <a href={ctaUrl} target="_blank" rel="noreferrer" className="btn-primary">
-          {explanation?.next_step ?? best.title}
+        <a href={cta.url} target="_blank" rel="noreferrer" className="btn-primary">
+          {cta.label}
         </a>
         <a href="#options" className="btn-secondary">
           Compare all options
@@ -222,7 +217,54 @@ function Adjusters({
               : `${usd(-s.equity)} more than it's worth`}
           </Live>
         </div>
+        {s.equity >= 1 && data.input.contract.kind !== "owned" && (
+          <p className="mt-1 text-sm text-tgray">If you switch cars, that money goes toward your next one.</p>
+        )}
+        {s.equity < 0 && (
+          <p className="mt-1 text-sm text-tgray">If you switch cars, this amount gets added to your new loan.</p>
+        )}
       </div>
+    </section>
+  );
+}
+
+// --- other brands: your car vs. the Toyota -----------------------------------
+
+function Compare({ data }: { data: PlanResponse }) {
+  const a = data.plan.assumptions as Record<string, number & Record<string, number>>;
+  const v = data.input.vehicle;
+  const target = data.plan.toyota_equivalent;
+  const scale = data.input.miles_per_year / 15000;
+  const dep = a.depreciation_per_year;
+  const rate = (make: string) => dep[make.toLowerCase()] ?? dep.default;
+  const rows: [string, string, string][] = [
+    ["Gas a year", usd(data.fuel.current_annual * scale), usd(data.fuel.toyota_annual * scale)],
+    ["Value lost a year", `${Math.round(rate(v.make) * 100)}%`, `${Math.round(rate("toyota") * 100)}%`],
+    ["Free scheduled service", "None", "2 years (new)"],
+  ];
+  return (
+    <section className="mt-6 rounded-[3px] border border-tline p-5">
+      <h2 className="text-lg font-semibold">
+        Your {v.model} vs. a {target}
+      </h2>
+      <table className="mt-3 w-full text-sm tabular-nums">
+        <thead>
+          <tr className="text-left text-tgray">
+            <th className="py-1 font-normal" />
+            <th className="py-1 font-normal">Your {v.model}</th>
+            <th className="py-1 font-normal">{target}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([k, mine, toyota]) => (
+            <tr key={k} className="border-t border-tline">
+              <th className="py-2 pr-3 text-left font-normal text-tgray">{k}</th>
+              <td className="py-2 pr-3">{mine}</td>
+              <td className="py-2 font-semibold">{toyota}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }
@@ -436,6 +478,12 @@ function Mileage({ driver, input }: { driver: string; input: PlanInput }) {
     carplan.mileage(driver).then(setRows).catch(() => setRows([]));
   }, [driver]);
   if (rows.length < 2) return null;
+  const months = rows.filter((r, i) => i === 0 || new Date(r.week).getMonth() !== new Date(rows[i - 1].week).getMonth());
+  const lo = Math.min(...rows.map((r) => r.odometer));
+  const hi = Math.max(...rows.map((r) => r.odometer));
+  const step = [1000, 2000, 5000, 10000].find((n) => (hi - lo) / n <= 5) ?? 20000;
+  const yTicks: number[] = [];
+  for (let n = Math.floor(lo / step) * step; n < hi + step; n += step) yTicks.push(n);
   return (
     <section className="mt-12">
       <h2 className="text-2xl font-bold tracking-tight">Your driving this year</h2>
@@ -447,11 +495,18 @@ function Mileage({ driver, input }: { driver: string; input: PlanInput }) {
           <LineChart data={rows} margin={{ left: 8, right: 8 }}>
             <XAxis
               dataKey="week"
+              ticks={months.map((r) => r.week)}
               tickFormatter={(t) => new Date(t).toLocaleDateString("en-US", { month: "short" })}
               fontSize={12}
-              minTickGap={24}
+              minTickGap={8}
             />
-            <YAxis fontSize={12} domain={["auto", "auto"]} tickFormatter={(n) => `${Math.round(n / 1000)}k`} width={40} />
+            <YAxis
+              fontSize={12}
+              domain={[yTicks[0], yTicks[yTicks.length - 1]]}
+              ticks={yTicks}
+              tickFormatter={(n) => `${n / 1000}k`}
+              width={40}
+            />
             <Tooltip
               labelFormatter={(t) => new Date(t).toLocaleDateString()}
               formatter={(n: number) => [`${Math.round(n).toLocaleString()} mi`, "Odometer"]}
@@ -466,7 +521,40 @@ function Mileage({ driver, input }: { driver: string; input: PlanInput }) {
 
 // --- page ------------------------------------------------------------------
 
+function PlanSkeleton() {
+  const bar = "animate-pulse rounded bg-tsurface";
+  return (
+    <div aria-busy="true">
+      <p className="mt-6 text-sm text-tgray" role="status">
+        Comparing your options…
+      </p>
+      <section className="tcard mt-4 space-y-4 p-6 sm:p-8">
+        <div className={`h-9 w-3/4 ${bar}`} />
+        <div className={`h-4 w-4/5 ${bar}`} />
+        <div className={`h-4 w-3/5 ${bar}`} />
+        <div className={`h-11 w-56 rounded-full ${bar}`} />
+      </section>
+      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className="h-36 rounded-[3px] border border-tline p-5">
+            <div className={`h-8 w-1/2 ${bar}`} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-12 grid gap-5 sm:grid-cols-2">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-48 rounded-[3px] border border-tline p-5">
+            <div className={`h-5 w-2/3 ${bar}`} />
+            <div className={`mt-5 h-8 w-1/3 ${bar}`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PlanPage() {
+  const router = useRouter();
   const params = useSearchParams();
   const driver = params.get("driver");
   const [input, setInput] = useState<PlanInput | null>(null);
@@ -565,7 +653,7 @@ function PlanPage() {
     );
   }
   if (!data || !input || value === null || miles === null) {
-    return <p className="pt-16 text-tgray">Comparing your options…</p>;
+    return <PlanSkeleton />;
   }
 
   const years = data.plan.horizon_months / 12;
@@ -575,11 +663,26 @@ function PlanPage() {
 
   return (
     <div className={loading ? "opacity-90 transition-opacity" : ""}>
-      <Link href="/" className="mt-6 inline-block text-sm text-tgray underline">
-        Start over
-      </Link>
+      <div className="mt-6 flex gap-5 text-sm text-tgray">
+        <button
+          type="button"
+          className="underline"
+          onClick={() => {
+            try {
+              sessionStorage.setItem(INPUT_KEY, JSON.stringify({ ...input, miles_per_year: miles, market_value: null }));
+            } catch {}
+            router.push(`/start?path=${input.path}&edit=1`);
+          }}
+        >
+          Edit your details
+        </button>
+        <Link href="/" className="underline">
+          Start over
+        </Link>
+      </div>
       <Answer input={input} data={data} explanation={explanation} gap={gap} updating={updating && !!explanation} />
       <Adjusters data={data} value={value} setValue={setValue} miles={miles} setMiles={setMiles} />
+      {input.path === "other" && data.plan.toyota_equivalent && <Compare data={data} />}
 
       <section id="options" className="mt-12 scroll-mt-20">
         <h2 className="text-2xl font-bold tracking-tight">Every option, side by side</h2>
@@ -610,7 +713,7 @@ function PlanPage() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<p className="pt-16 text-tgray">Loading…</p>}>
+    <Suspense fallback={<PlanSkeleton />}>
       <PlanPage />
     </Suspense>
   );

@@ -3,8 +3,11 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CarPlan",
-  description: "Find the smartest next move for you and your car.",
+  metadataBase: new URL("https://carplan.tech"),
+  title: { default: "CarPlan: your car's next move", template: "%s | CarPlan" },
+  description: "Snap your lease or loan contract. See every option side by side, with honest math and the Toyota Financial Services products that fit.",
+  openGraph: { siteName: "CarPlan", url: "https://carplan.tech", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#ffffff" };

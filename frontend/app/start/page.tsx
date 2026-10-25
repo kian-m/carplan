@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { carplan, INPUT_KEY, type ParsedContract, type Path, type PlanInput } from "@/lib/carplan";
 
 type Kind = "lease" | "loan" | "owned";
@@ -41,7 +41,9 @@ function Text({ label, value, onChange }: { label: string; value: string; onChan
 
 function StartPage() {
   const router = useRouter();
-  const path = (useSearchParams().get("path") as Path) || "toyota";
+  const params = useSearchParams();
+  const path = (params.get("path") as Path) || "toyota";
+  const editing = params.get("edit") === "1";
 
   const [vin, setVin] = useState("");
   const [car, setCar] = useState({ year: "", make: path === "toyota" ? "Toyota" : "", model: "", trim: "", odometer: "" });
@@ -52,6 +54,31 @@ function StartPage() {
   const [glossary, setGlossary] = useState<{ term: string; meaning: string }[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [base, setBase] = useState<PlanInput | null>(null); // the plan being edited, to keep name and flags
+
+  // Editing a plan: fill the form back in with what the driver already entered.
+  useEffect(() => {
+    if (!editing) return;
+    let saved: PlanInput | null = null;
+    try {
+      saved = JSON.parse(sessionStorage.getItem(INPUT_KEY) ?? "null");
+    } catch {}
+    if (!saved) return;
+    const str = (n: number | null | undefined) => (n ? String(n) : "");
+    const v = saved.vehicle, k = saved.contract, f = saved.finances;
+    setBase(saved);
+    setVin(v.vin ?? "");
+    setCar({ year: str(v.year), make: v.make, model: v.model, trim: v.trim ?? "", odometer: str(v.odometer) });
+    setKind(k.kind);
+    setC({
+      payment: str(k.monthly_payment), term: str(k.term_months) || "36", elapsed: str(k.months_elapsed),
+      residual: str(k.residual_value), allowed: str(k.miles_allowed_per_year) || "12000", fee: str(k.excess_mile_fee) || "0.15",
+      apr: str(k.apr), financed: str(k.amount_financed), lender: k.lender ?? "",
+    });
+    setMoney({ income: str(Math.round(f.monthly_income)), bills: str(Math.round(f.monthly_bills)), source: f.source ?? "manual" });
+    setMiles(str(saved.miles_per_year) || "12000");
+  }, [editing]);
 
   const setCarField = (k: keyof typeof car) => (v: string) => setCar((s) => ({ ...s, [k]: v }));
   const setCField = (k: keyof typeof c) => (v: string) => setC((s) => ({ ...s, [k]: v }));
@@ -74,7 +101,8 @@ function StartPage() {
 
   async function upload(file: File) {
     setBusy(true);
-    setStatus("Reading your contract…");
+    setFileName(file.name);
+    setStatus("Reading your contract. This takes about 10 seconds…");
     try {
       const p: ParsedContract = await carplan.parseContract(file);
       if (p.vin) setVin(p.vin);
@@ -129,8 +157,10 @@ function StartPage() {
     e.preventDefault();
     const n = (s: string) => Number(s) || 0;
     if (!car.year || !car.make || !car.model) return setStatus("Add your car's year, make and model, or enter your VIN.");
+    if (!car.odometer) return setStatus("Add your car's current mileage. It's on the dashboard.");
     if (!money.income) return setStatus("Add your monthly income, or connect your bank.");
     const input: PlanInput = {
+      ...(base ?? {}),
       path: car.make.trim().toLowerCase() === "toyota" ? "toyota" : "other",
       vehicle: { vin: vin || null, year: n(car.year), make: car.make.trim(), model: car.model.trim(), trim: car.trim || null, odometer: n(car.odometer) },
       contract: {
@@ -157,14 +187,23 @@ function StartPage() {
       <Link href="/" className="text-sm text-tgray underline">
         Back
       </Link>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight">{path === "toyota" ? "Tell us about your Toyota" : "Tell us about your car"}</h1>
+      <h1 className="mt-3 text-3xl font-bold tracking-tight">
+        {editing ? "Edit your details" : path === "toyota" ? "Tell us about your Toyota" : "Tell us about your car"}
+      </h1>
 
       <section className="tcard mt-6">
         <h2 className="text-lg font-semibold">Fastest: add your lease or loan contract</h2>
         <p className="mt-1 text-sm text-tgray">Upload the PDF or snap a photo. We&rsquo;ll fill in the details and explain the fine print.</p>
         <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-tline px-4 py-8 text-center hover:border-tred">
-          <span className="font-semibold">Choose a file or take a photo</span>
-          <span className="mt-1 text-xs text-tgray">PDF, JPG or PNG up to 15 MB</span>
+          {fileName ? (
+            <span className="flex items-center gap-2 font-semibold">
+              {busy && <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-tline border-t-tred" />}
+              {fileName}
+            </span>
+          ) : (
+            <span className="font-semibold">Choose a file or take a photo</span>
+          )}
+          <span className="mt-1 text-xs text-tgray">{fileName ? "Choose a different file" : "PDF, JPG or PNG up to 15 MB"}</span>
           <span className="mt-3 max-w-md text-xs text-tgray">
             We only read your car and payment terms. Your file isn&rsquo;t saved. Feel free to cover your name, address
             and account numbers before you upload.
@@ -208,7 +247,7 @@ function StartPage() {
           <Text label="Make" value={car.make} onChange={setCarField("make")} />
           <Text label="Model" value={car.model} onChange={setCarField("model")} />
           <Text label="Trim" value={car.trim} onChange={setCarField("trim")} />
-          <Num label="Current mileage" value={car.odometer} onChange={setCarField("odometer")} />
+          <Num label="Current mileage" value={car.odometer} onChange={setCarField("odometer")} hint="Check your dashboard" />
           <Num label="Miles you drive a year" value={miles} onChange={setMiles} />
         </div>
       </section>

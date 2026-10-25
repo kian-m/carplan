@@ -37,14 +37,14 @@ def test_home_offers_both_paths_and_sample_drivers(page: Page, base_url):
 
 # --- sample drivers: each gets its own, honest answer ----------------------
 
-@pytest.mark.parametrize("driver, best", [
-    ("maria", "Buy out your lease"),
-    ("sam", "Keep your car"),
-    ("jordan", "Certified Used RAV4 Hybrid"),
+@pytest.mark.parametrize("driver, best, count", [
+    ("maria", "Buy out your lease", 4),
+    ("sam", "Keep your car", 3),  # no Certified Used: it would be the same 2024 Corolla Hybrid he has
+    ("jordan", "Certified Used RAV4 Hybrid", 4),
 ])
-def test_each_sample_driver_gets_the_right_recommendation(page: Page, base_url, driver, best):
+def test_each_sample_driver_gets_the_right_recommendation(page: Page, base_url, driver, best, count):
     open_plan(page, base_url, driver)
-    expect(page.locator("#options article")).to_have_count(4)
+    expect(page.locator("#options article")).to_have_count(count)
     expect(best_card(page)).to_contain_text(best)
     # Gemini's explanation (or the template) replaces the loading skeleton
     expect(page.get_by_label("Writing your explanation")).to_have_count(0, timeout=30_000)
@@ -56,6 +56,8 @@ def test_underwater_loan_leads_with_gap(page: Page, base_url):
     gap = page.get_by_text("Protect yourself with GAP")
     expect(gap).to_be_visible()
     expect(page.get_by_role("link", name="Learn about GAP")).to_have_attribute("href", GAP_URL)
+    # the main button says where it goes
+    expect(page.get_by_role("link", name="Explore GAP coverage")).to_have_attribute("href", GAP_URL)
     expect(page.get_by_text(re.compile(r"^\$[\d,]+ more than it.s worth$"))).to_be_visible()
 
 
@@ -99,6 +101,31 @@ def test_mileage_slider_changes_lease_overage(page: Page, base_url):
     for _ in range(10):
         page.keyboard.press("ArrowRight")
     expect(note).not_to_have_text(before)
+
+
+def test_other_brand_sees_its_car_next_to_the_toyota(page: Page, base_url):
+    open_plan(page, base_url, "jordan")
+    compare = page.get_by_role("heading", name="Your CR-V vs. a RAV4 Hybrid")
+    expect(compare).to_be_visible()
+    expect(page.get_by_role("row", name=re.compile("Gas a year"))).to_be_visible()
+
+
+def test_edit_details_keeps_what_you_entered(page: Page, base_url):
+    open_plan(page, base_url, "sam")
+    page.get_by_role("button", name="Edit your details").click()
+    expect(page.get_by_role("heading", name="Edit your details")).to_be_visible()
+    expect(page.get_by_label("Model", exact=True)).to_have_value("Corolla Hybrid")
+    expect(page.get_by_label("Monthly take-home pay")).not_to_have_value("")
+    page.get_by_label("Current mileage").fill("40000")
+    page.get_by_role("button", name="See my next move").click()
+    expect(page).to_have_url(re.compile(r"/plan$"))
+    expect(page.get_by_text("Sam's 2024 Toyota Corolla Hybrid")).to_be_visible()
+
+
+def test_unknown_page_points_home(page: Page, base_url):
+    page.goto(f"{base_url}/no-such-page")
+    expect(page.get_by_role("heading", name="We can’t find that page")).to_be_visible()
+    expect(page.get_by_role("link", name="Go to the home page")).to_have_attribute("href", "/")
 
 
 # --- add your car ------------------------------------------------------------
@@ -148,10 +175,20 @@ def test_bad_vin_explains_what_to_do(page: Page, base_url):
     expect(page.get_by_role("status")).to_contain_text("17 characters")
 
 
+def test_missing_mileage_is_caught_before_submitting(page: Page, base_url):
+    page.goto(f"{base_url}/start?path=toyota")
+    page.get_by_label("Year", exact=True).fill("2022")
+    page.get_by_label("Model", exact=True).fill("RAV4")
+    page.get_by_role("button", name="See my next move").click()
+    expect(page.get_by_role("status")).to_contain_text("mileage")
+    expect(page).to_have_url(re.compile(r"/start"))
+
+
 def test_missing_income_is_caught_before_submitting(page: Page, base_url):
     page.goto(f"{base_url}/start?path=toyota")
     page.get_by_label("Year", exact=True).fill("2022")
     page.get_by_label("Model", exact=True).fill("RAV4")
+    page.get_by_label("Current mileage").fill("30000")
     page.get_by_role("button", name="See my next move").click()
     expect(page.get_by_role("status")).to_contain_text("income")
     expect(page).to_have_url(re.compile(r"/start"))

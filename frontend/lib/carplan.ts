@@ -85,6 +85,7 @@ export type Plan = {
   recommended: OptionId;
   recommendations: TfsRecommendation[];
   toyota_equivalent: string | null;
+  next_step: { label: string; url: string };
   assumptions: Record<string, unknown>;
   disclosure: string;
 };
@@ -95,7 +96,6 @@ export type Explanation = {
   headline: string;
   summary: string;
   reasons: string[];
-  next_step: string;
   source: "gemini" | "template";
 };
 

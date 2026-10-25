@@ -124,7 +124,7 @@ CONTRACT_SCHEMA = {
         "amount_financed": {"type": "number", "description": "Loan only"},
         "plain_language": {
             "type": "array",
-            "description": "3-5 key terms from this contract, each explained in one plain sentence",
+            "description": "3-5 key terms from this contract, each explained in one short, plain sentence",
             "items": {"type": "object", "properties": {"term": {"type": "string"}, "meaning": {"type": "string"}},
                       "required": ["term", "meaning"]},
         },
@@ -135,7 +135,9 @@ CONTRACT_SCHEMA = {
 CONTRACT_PROMPT = (
     "This is a vehicle lease or retail installment (loan) contract. Extract the fields in the schema. "
     "Leave out any field you can't find; never guess numbers. In plain_language, explain the terms a "
-    "first-time driver would find confusing (like residual value, money factor, disposition fee)."
+    "first-time driver would find confusing (like residual value, money factor, disposition fee). "
+    "Write each meaning for a 5th grader: one short sentence, under 15 words, everyday words, "
+    "using 'you' and 'the car'. Example: 'Residual value: what you can pay to keep the car at the end.'"
 )
 
 

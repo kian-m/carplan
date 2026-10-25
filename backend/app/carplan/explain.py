@@ -10,11 +10,17 @@ from app.integrations import gemini
 
 SYSTEM = (
     "You are CarPlan, a Toyota Financial Services assistant. Explain the recommendation in plain, "
-    "friendly language a first-time car buyer understands. Use ONLY the numbers provided; never invent "
-    "prices, rates or savings. Round dollars to the nearest $10. No jargon: say 'what you owe' instead of "
+    "friendly language a first-time car buyer understands. Use ONLY the numbers provided, exactly as given "
+    "(they are already whole dollars and match what the driver sees on screen); never round, invent "
+    "prices, rates or savings. Write dollars with commas, like $21,420. Skip differences under $20; "
+    "they don't matter to the driver. No jargon: say 'what you owe' instead of "
     "'payoff', 'what it's worth' instead of 'market value'. Be honest when another option is close. "
     "Write at a 6th-grade reading level: short sentences (under 15 words), everyday words. "
-    "Write every field in sentence case (capitalize only the first word and proper nouns)."
+    "Write every field in sentence case (capitalize only the first word and proper nouns). "
+    "The driver's car is already named above the headline, so the headline must not repeat its year, make "
+    "or model (say 'Keep your car', not 'Keep your 2024 Toyota Corolla Hybrid'). "
+    "When path is 'other', compare the recommendation with keeping their current car (current_car_option), "
+    "not with the other Toyota options."
 )
 
 SCHEMA = {
@@ -24,26 +30,30 @@ SCHEMA = {
         "summary": {"type": "string", "description": "One sentence with the key saving or reason."},
         "reasons": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 3,
                     "description": "Short bullets, each grounded in a provided number."},
-        "next_step": {"type": "string", "description": "Button label, 2-5 words, starts with a verb."},
     },
-    "required": ["headline", "summary", "reasons", "next_step"],
+    "required": ["headline", "summary", "reasons"],
 }
 
-NEXT_STEP = {
-    "buy_out": "Request a payoff quote",
-    "keep": "Keep driving",
-    "new_toyota": "Find your next Toyota",
-    "certified_used": "Browse Certified Used",
-    "go_flexible": "Join the waitlist",
-}
 
 _cache: dict[str, dict] = {}
+
+
+def _whole(x):
+    """Dollar amounts as whole numbers, so the words match the cards exactly."""
+    if isinstance(x, float):
+        return round(x) if abs(x) >= 10 else round(x, 2)
+    if isinstance(x, dict):
+        return {k: _whole(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_whole(v) for v in x]
+    return x
 
 
 def _facts(inp: PlanInput, plan: Plan) -> dict:
     best = next(o for o in plan.options if o.id == plan.recommended)
     others = sorted((o for o in plan.options if o.id != best.id), key=lambda o: o.total_cost)
-    return {
+    current = next((o for o in plan.options if o.id in ("keep", "buy_out")), None)
+    return _whole({
         "driver": inp.name,
         "car": f"{inp.vehicle.year} {inp.vehicle.make} {inp.vehicle.model}",
         "path": inp.path,
@@ -54,8 +64,9 @@ def _facts(inp: PlanInput, plan: Plan) -> dict:
         "recommended": best.model_dump(),
         "runner_up": others[0].model_dump() if others else None,
         "savings_vs_runner_up": round(others[0].total_cost - best.total_cost) if others else 0,
+        "current_car_option": current.model_dump() if current and current.id != best.id else None,
         "tfs_recommendations": [r.model_dump(include={"name", "reason"}) for r in plan.recommendations[:3]],
-    }
+    })
 
 
 def template(inp: PlanInput, plan: Plan) -> dict:
@@ -70,7 +81,6 @@ def template(inp: PlanInput, plan: Plan) -> dict:
         "summary": f"It costs the least over {f['horizon_years']} years"
                    + (f", about ${saving:,} less than your next best choice." if saving > 0 else "."),
         "reasons": reasons[:3],
-        "next_step": NEXT_STEP[best["id"]],
         "source": "template",
     }
 

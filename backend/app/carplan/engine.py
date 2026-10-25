@@ -9,7 +9,7 @@ Gemini only explains these numbers; it never produces them.
 from datetime import date
 
 from app.carplan.models import CostBreakdown, Option, Plan, PlanInput, Recommendation, Situation
-from app.carplan.tfs import PRODUCTS, PROTECTION_DISCLOSURE
+from app.carplan.tfs import CTA, PRODUCTS, PROTECTION_DISCLOSURE
 
 # Shown to the user under "How we calculated this". Rates are illustrative, not offers.
 ASSUMPTIONS = {
@@ -261,7 +261,7 @@ def build_plan(
         ))
 
     # 2. A new Toyota: lease for current Toyota lessees, finance otherwise
-    fees, credit, exit_notes = exit_terms(True)
+    fees, credit, _ = exit_terms(True)
     new_ins = ins * A["new_car_insurance_multiplier"]
     if inp.path == "toyota" and c.kind == "lease":
         term = A["new_lease_term_months"]
@@ -274,7 +274,7 @@ def build_plan(
                 payments=pm * H, fuel=fuel(fuel_target, mpy, H), maintenance=maintenance(0, years, True, True),
                 insurance=new_ins * H, fees=fees, equity_credit=0,
             ),
-            exit_notes + ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
+            ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["turn_in_new", "repeat_customer"],
         ))
     else:
@@ -289,30 +289,32 @@ def build_plan(
                 maintenance=maintenance(0, years, True, True), insurance=new_ins * H, fees=fees,
                 equity_at_end=value_end - bal_end,
             ),
-            exit_notes + ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
+            ["Free scheduled service for 2 years or 25,000 miles (ToyotaCare)."],
             ["finance_new"] + (["repeat_customer"] if c.lender == "TFS" else ["prequalify"]),
             principal / target_msrp,
         ))
 
-    # 3. Toyota Certified Used
+    # 3. Toyota Certified Used, unless that's the same model and year (or older) than the car they have
+    cpo_year = date.today().year - A["certified_used_age_years"]
+    same_car = is_toyota and target.lower() == v.model.lower() and v.year >= cpo_year
     cpo_price = target_msrp * A["certified_used_price_pct_of_msrp"]
     principal = cpo_price * (1 + A["sales_tax_rate"]) + A["dealer_fees"] - credit
     pm = payment(principal, A["certified_used_apr"], A["finance_term_months"])
     bal_end = balance_after(principal, A["certified_used_apr"], A["finance_term_months"], H)
     value_end = depreciate(cpo_price, years, "toyota", mpy)
-    options.append(option(
-        "certified_used", f"Certified Used {target}", f"{date.today().year - A['certified_used_age_years']} {target}", pm,
+    if not same_car: options.append(option(
+        "certified_used", f"Certified Used {target}", f"{cpo_year} {target}", pm,
         CostBreakdown(
             payments=pm * min(H, A["finance_term_months"]), fuel=fuel(fuel_target, mpy, H),
             maintenance=maintenance(A["certified_used_age_years"], years, True, False), insurance=ins * H,
             fees=fees, equity_at_end=value_end - bal_end,
         ),
-        exit_notes + ["Checked on 160 points. Comes with a Toyota warranty and 1 year of roadside help."],
+        ["Checked on 160 points. Comes with a Toyota warranty and 1 year of roadside help."],
         ["certified_used"], principal / cpo_price,
     ))
 
     # 4. Go flexible: a Toyota subscription concept (Toyota's mobility direction)
-    fees_flex, credit_flex, flex_notes = exit_terms(True)
+    fees_flex, credit_flex, _ = exit_terms(True)
     pm = A["flexible_monthly"] + A["flexible_per_mile"] * mpy / 12
     options.append(option(
         "go_flexible", "Go flexible", f"Toyota subscription · {target}", pm,
@@ -320,7 +322,7 @@ def build_plan(
             payments=pm * H, fuel=fuel(fuel_target, mpy, H), fees=fees_flex,
             equity_credit=credit_flex,
         ),
-        flex_notes + ["A future idea: one monthly price with insurance and upkeep included. Swap or pause anytime."],
+        ["A future idea: one monthly price with insurance and upkeep included. Swap or pause anytime."],
         [],
     ))
 
@@ -374,6 +376,12 @@ def build_plan(
     order = {"high": 0, "medium": 1, "low": 2}
     recs.sort(key=lambda r: order[r.priority])
 
+    # Main button: urgent protection first (GAP), then the chosen option's own product, then the top suggestion.
+    urgent = [r.product for r in recs if r.priority == "high"]
+    key = next(iter(urgent + best.tfs_products[:1] + [r.product for r in recs]), None)
+    next_step = ({"label": CTA[key], "url": PRODUCTS[key]["url"]} if key else
+                 {"label": "Visit Toyota Financial Services", "url": "https://www.toyotafinancial.com/us/en.html"})
+
     return Plan(
         horizon_months=H,
         situation=Situation(
@@ -387,6 +395,7 @@ def build_plan(
         recommended=best.id,
         recommendations=recs,
         toyota_equivalent=target,
+        next_step=next_step,
         assumptions=A,
         disclosure=PROTECTION_DISCLOSURE + " " + A["rates_disclaimer"],
     )

@@ -101,6 +101,25 @@ PRODUCTS: dict[str, dict] = {
     },
 }
 
+# Button labels for each product, so a button always says where it goes.
+CTA = {
+    "payoff_quote": "Get a payoff quote",
+    "turn_in_new": "See lease-end options",
+    "finance_new": "See financing options",
+    "certified_used": "Browse Certified Used",
+    "prequalify": "Get prequalified with TFS",
+    "repeat_customer": "See repeat customer savings",
+    "college_rebate": "See the College Rebate",
+    "military_rebate": "See the Military Rebate",
+    "gap": "Explore GAP coverage",
+    "vsa": "See service agreements",
+    "toyotacare_plus": "See ToyotaCare Plus",
+    "auto_care": "See Toyota Auto Care",
+    "tire_wheel": "See Tire & Wheel Protection",
+    "excess_wear": "See Excess Wear & Use",
+    "insurance": "Get an insurance quote",
+}
+
 PROTECTION_DISCLOSURE = (
     "Protection plans are optional. You can cancel them, and you don't need one to get a loan."
 )

@@ -101,5 +101,6 @@ class Plan(BaseModel):
     recommended: str  # Option.id
     recommendations: list[Recommendation]
     toyota_equivalent: str | None = None
+    next_step: dict  # {"label", "url"}: the main button, labeled for where it actually goes
     assumptions: dict
     disclosure: str

@@ -30,7 +30,7 @@ DRIVERS: dict[str, dict] = {
     },
     "sam": {
         "first": "Sam", "last": "Patel",
-        "tagline": "Car loan, new baby on the way",
+        "tagline": "Car loan, owes more than it's worth",
         "input": PlanInput(
             path="toyota", name="Sam",
             vehicle=Vehicle(vin="JTDBCMFE2RJ012345", year=2024, make="Toyota", model="Corolla Hybrid", trim="LE",
@@ -46,9 +46,9 @@ DRIVERS: dict[str, dict] = {
     },
     "jordan": {
         "first": "Jordan", "last": "Kim",
-        "tagline": "Lease ending, just graduated",
+        "tagline": "Lease ends in 6 months, over on miles",
         "input": PlanInput(
-            path="other", name="Jordan", flags=["college"],
+            path="other", name="Jordan",
             vehicle=Vehicle(vin="7FARW2H58NE004117", year=2022, make="Honda", model="CR-V", trim="EX",
                             odometer=37500, msrp=31600),
             contract=Contract(kind="lease", monthly_payment=429, term_months=36, months_elapsed=30,
